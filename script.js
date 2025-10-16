@@ -74,7 +74,7 @@ const TURN_PHASES = [
   {
     id: "start",
     label: "Start Phase",
-    summary: "Ready units and resolve any upkeep effects.",
+    summary: "Ready units, regenerate health, and resolve any upkeep effects.",
   },
   {
     id: "main",
@@ -514,6 +514,60 @@ const updateTurnDisplay = () => {
   renderSelectedCellDetails(selectedCell);
 };
 
+const applyStartPhaseRegeneration = () => {
+  const faction = getActiveFaction();
+  if (!faction) {
+    return;
+  }
+
+  const templatesById = new Map();
+  const roster = unitRosters.get(faction.id);
+  if (Array.isArray(roster)) {
+    roster.forEach((template) => {
+      templatesById.set(template.id, template);
+    });
+  }
+
+  boardUnits.forEach((units) => {
+    units.forEach((unit) => {
+      if (unit.factionId !== faction.id) {
+        return;
+      }
+
+      const template = templatesById.get(unit.templateId);
+      const templateMaxHp = template?.stats?.hp;
+      if (typeof unit.maxHp !== "number" && typeof templateMaxHp === "number") {
+        unit.maxHp = templateMaxHp;
+      }
+
+      const maxHp =
+        typeof unit.maxHp === "number"
+          ? unit.maxHp
+          : typeof templateMaxHp === "number"
+            ? templateMaxHp
+            : null;
+      const currentHp = unit.stats?.hp;
+
+      if (
+        typeof maxHp !== "number" ||
+        maxHp <= 0 ||
+        typeof currentHp !== "number" ||
+        currentHp <= 0 ||
+        currentHp >= maxHp
+      ) {
+        if (typeof maxHp === "number" && typeof unit.maxHp !== "number") {
+          unit.maxHp = maxHp;
+        }
+        return;
+      }
+
+      const healAmount = Math.ceil(maxHp * 0.2);
+      unit.stats.hp = Math.min(maxHp, currentHp + healAmount);
+      unit.maxHp = maxHp;
+    });
+  });
+};
+
 const runStartPhase = () => {
   if (factions.length === 0) {
     updateTurnDisplay();
@@ -521,6 +575,7 @@ const runStartPhase = () => {
   }
 
   turnState.currentPhaseIndex = START_PHASE_INDEX;
+  applyStartPhaseRegeneration();
   updateTurnDisplay();
 
   turnState.currentPhaseIndex = MAIN_PHASE_INDEX;
@@ -1161,6 +1216,7 @@ const createUnitInstance = (factionId, template) => ({
   role: template.role,
   detail: template.detail,
   traits: Array.isArray(template.traits) ? [...template.traits] : [],
+  maxHp: typeof template.stats?.hp === "number" ? template.stats.hp : null,
   stats: { ...template.stats },
 });
 
