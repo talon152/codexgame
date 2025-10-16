@@ -14,8 +14,8 @@ export const sunArmy = {
       detail:
         "The Vanguard hold the line while radiating protective wards that help allies recover between exchanges.",
       traits: [
-        "Sanctuary Bulwark: Gain +2 DEF while occupying a village hex.",
-        "Guardian Halo: Adjacent allies recover 2 HP when the Vanguard survives a combat round.",
+        "Sanctified Shields: Their 5 DEF keeps damage low even against elite attackers.",
+        "Ward-Hardened: A hearty 18 HP lets them anchor the Sun Dominion battle line for extended fights.",
       ],
       stats: { strength: 7, attack: 6, defence: 5, hp: 18, initiative: 6 },
     },
@@ -28,8 +28,8 @@ export const sunArmy = {
       detail:
         "Dawnblade outriders focus on flanking strikes that disrupt the enemy line before withdrawing to safety.",
       traits: [
-        "Skirmish Dash: May move after attacking if starting from a plain hex.",
-        "Momentum Drop: Strength reduced by 2 when ending movement on a mountain hex.",
+        "Shock Charge: Opening strikes leverage 8 ATK to burst through enemy defences.",
+        "Blazing Tempo: Initiative 8 often puts them ahead of slower foes each combat round.",
       ],
       stats: { strength: 6, attack: 8, defence: 4, hp: 16, initiative: 8 },
     },
@@ -42,8 +42,8 @@ export const sunArmy = {
       detail:
         "The arcanists specialise in burning away cover, softening entrenched foes before the infantry advance.",
       traits: [
-        "Piercing Flare: Ignore the swamp attack penalty when casting from range.",
-        "Beacon Sigil: Marked targets grant +1 ATK to subsequent magical attacks this round.",
+        "Radiant Volley: Focused 7 ATK blasts reliably chip away at enemy lines.",
+        "Fragile Channel: With only 14 HP they rely on allies to keep them safe once engaged.",
       ],
       stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7 },
     },
@@ -56,8 +56,8 @@ export const sunArmy = {
       detail:
         "Sentinels form immovable bulwarks that slow enemy assaults while ranged allies pick them apart.",
       traits: [
-        "Verdant Bastion: Gain +1 DEF from forest terrain bonuses (total +2).",
-        "Stalwart Advance: Cannot be forced to retreat by morale checks.",
+        "Immovable Wall: Their 7 DEF turns most blows into glancing strikes.",
+        "Bulwark Endurance: 20 HP lets them soak punishment longer than other Sun units.",
       ],
       stats: { strength: 8, attack: 5, defence: 7, hp: 20, initiative: 4 },
     },
@@ -70,8 +70,8 @@ export const sunArmy = {
       detail:
         "Skirmishers screen the army, striking opportunistically and relaying enemy movements back to command.",
       traits: [
-        "Trailblazer: Reveals hidden enemy stacks in adjacent forest hexes.",
-        "Supply Cache: When ending in a village, restore 1 spent tactic card.",
+        "Forward Scouts: Balanced 6 ATK and 7 INIT make them dependable first responders.",
+        "Adaptive Patrol: Moderate 15 HP lets them skirmish without immediately folding under pressure.",
       ],
       stats: { strength: 6, attack: 6, defence: 4, hp: 15, initiative: 7 },
     },
