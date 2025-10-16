@@ -1,4 +1,8 @@
 import { ARMIES, getArmyById } from "./data/armies/index.js";
+import {
+  INDEPENDENT_FACTION,
+  getRandomIndependentUnit,
+} from "./data/independent-units.js";
 
 const GRID_SIZE = 10;
 
@@ -157,6 +161,98 @@ const turnState = {
 
 const boardUnits = new Map();
 
+const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
+const capitalAssignments = new Map();
+
+const capitalSelectionState = {
+  isActive: false,
+  index: 0,
+  error: "",
+};
+
+const isCapitalSelectionActive = () => capitalSelectionState.isActive;
+
+const getCapitalSide = (index) => (index % 2 === 0 ? "west" : "east");
+
+const getCapitalSideLabel = (side) =>
+  side === "west" ? "western half of the map" : "eastern half of the map";
+
+const getCapitalSelectionRequirement = () => {
+  if (!isCapitalSelectionActive()) {
+    return null;
+  }
+
+  const faction = factions[capitalSelectionState.index];
+
+  if (!faction) {
+    return null;
+  }
+
+  return { faction, side: getCapitalSide(capitalSelectionState.index) };
+};
+
+const isColumnOnSide = (col, side) => {
+  if (side === "west") {
+    const limit = Math.floor((GRID_SIZE - 1) / 2);
+    return col <= limit;
+  }
+
+  const minimum = Math.ceil((GRID_SIZE - 1) / 2);
+  return col >= minimum;
+};
+
+const setCapitalSelectionError = (message = "") => {
+  capitalSelectionState.error = message;
+  updatePhaseDisplay();
+};
+
+const markCapitalCell = (cell, faction) => {
+  if (!cell || !faction) {
+    return;
+  }
+
+  cell.classList.add("cell--capital");
+  cell.dataset.capitalFaction = faction.id;
+  cell.dataset.capitalName = faction.name ?? faction.id;
+
+  let badge = cell.querySelector(".cell-capital-badge");
+  if (!badge) {
+    badge = document.createElement("span");
+    badge.className = "cell-capital-badge";
+    badge.textContent = "Capital";
+    badge.setAttribute(
+      "title",
+      `${cell.dataset.capitalName ?? "Capital"} stronghold`,
+    );
+
+    const terrainLabel = cell.querySelector(".cell-terrain");
+    if (terrainLabel) {
+      terrainLabel.insertAdjacentElement("beforebegin", badge);
+    } else {
+      cell.prepend(badge);
+    }
+  }
+};
+
+const beginCapitalSelection = () => {
+  if (factions.length === 0) {
+    capitalSelectionState.isActive = false;
+    capitalSelectionState.index = 0;
+    capitalSelectionState.error = "";
+    updateTurnDisplay();
+    return;
+  }
+
+  capitalSelectionState.isActive = true;
+  capitalSelectionState.index = 0;
+  capitalSelectionState.error = "";
+  capitalAssignments.clear();
+  turnState.currentFactionIndex = 0;
+  turnState.currentPhaseIndex = START_PHASE_INDEX;
+  setCapitalSelectionError();
+  updateTurnDisplay();
+};
+
 const renderPhaseList = () => {
   phaseListElement.innerHTML = "";
 
@@ -169,6 +265,40 @@ const renderPhaseList = () => {
 };
 
 const updatePhaseDisplay = () => {
+  if (isCapitalSelectionActive()) {
+    if (phaseNameDisplay) {
+      phaseNameDisplay.textContent = "Capital Placement";
+    }
+
+    const requirement = getCapitalSelectionRequirement();
+    const summaryParts = [];
+
+    if (requirement?.faction) {
+      summaryParts.push(
+        `${requirement.faction.name} must claim a capital on the ${getCapitalSideLabel(
+          requirement.side,
+        )}.`,
+      );
+    } else {
+      summaryParts.push("Select capitals for each faction to begin the campaign.");
+    }
+
+    if (capitalSelectionState.error) {
+      summaryParts.push(capitalSelectionState.error);
+    }
+
+    if (phaseSummaryDisplay) {
+      phaseSummaryDisplay.textContent = summaryParts.join(" ");
+    }
+
+    Array.from(phaseListElement.children).forEach((item) => {
+      item.classList.remove("is-active", "is-complete");
+      item.removeAttribute("aria-current");
+    });
+
+    return;
+  }
+
   const activePhase = TURN_PHASES[turnState.currentPhaseIndex];
   phaseNameDisplay.textContent = activePhase.label;
   phaseSummaryDisplay.textContent = activePhase.summary;
@@ -212,7 +342,8 @@ const updateFactionDisplay = () => {
   }
 };
 
-const isMainPhaseActive = () => turnState.currentPhaseIndex === MAIN_PHASE_INDEX;
+const isMainPhaseActive = () =>
+  !isCapitalSelectionActive() && turnState.currentPhaseIndex === MAIN_PHASE_INDEX;
 
 const updateAdvanceButton = () => {
   if (!advancePhaseButton) {
@@ -235,7 +366,7 @@ const updateAdvanceButton = () => {
   );
 
   const shouldDisable =
-    !hasFactions || isResolvingBattles || !mainPhaseActive;
+    !hasFactions || isResolvingBattles || !mainPhaseActive || isCapitalSelectionActive();
   advancePhaseButton.disabled = shouldDisable;
 };
 
@@ -459,6 +590,18 @@ const resetBoardState = () => {
     stack.textContent = "";
     delete stack.dataset.count;
   });
+
+  mapGrid.querySelectorAll(".cell").forEach((cell) => {
+    cell.classList.remove("cell--capital");
+    delete cell.dataset.capitalFaction;
+    delete cell.dataset.capitalName;
+    const badge = cell.querySelector(".cell-capital-badge");
+    if (badge) {
+      badge.remove();
+    }
+  });
+
+  capitalAssignments.clear();
 };
 
 const updateArmySummaryText = (summaryElement, armyId) => {
@@ -599,7 +742,7 @@ const applyArmySelection = (armyIds) => {
 
   selectedCell = null;
   renderSelectedCellDetails(null);
-  runStartPhase();
+  beginCapitalSelection();
 };
 
 const updateTurnDisplay = () => {
@@ -682,6 +825,10 @@ const advancePhase = async () => {
     return;
   }
 
+  if (isCapitalSelectionActive()) {
+    return;
+  }
+
   if (factions.length === 0) {
     openArmySelector({ focusSelect: true });
     return;
@@ -729,7 +876,13 @@ const advancePhase = async () => {
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
 
-const getFactionById = (id) => factions.find((faction) => faction.id === id);
+const getFactionById = (id) => {
+  if (id === INDEPENDENT_FACTION_ID) {
+    return INDEPENDENT_FACTION;
+  }
+
+  return factions.find((faction) => faction.id === id);
+};
 
 const getCellKey = (row, col) => `${row}-${col}`;
 
@@ -1509,6 +1662,44 @@ const updateCellUnitStack = (cell, units) => {
   }
 };
 
+const populateIndependentCells = () => {
+  if (!mapGrid) {
+    return;
+  }
+
+  const cells = Array.from(mapGrid.querySelectorAll(".cell"));
+  cells.forEach((cell) => {
+    if (cell.dataset.capitalFaction) {
+      return;
+    }
+
+    const coordinates = getCellCoordinates(cell);
+    if (!coordinates) {
+      return;
+    }
+
+    const { row, col } = coordinates;
+    const unitCount = randomIntInclusive(1, 2);
+    const units = Array.from({ length: unitCount }, () =>
+      createUnitInstance(INDEPENDENT_FACTION_ID, getRandomIndependentUnit()),
+    );
+
+    setUnitsForCell(row, col, units);
+    updateCellUnitStack(cell, units);
+  });
+};
+
+const completeCapitalSelection = () => {
+  capitalSelectionState.isActive = false;
+  capitalSelectionState.index = 0;
+  capitalSelectionState.error = "";
+  updatePhaseDisplay();
+  populateIndependentCells();
+  renderSelectedCellDetails(selectedCell);
+  turnState.currentFactionIndex = 0;
+  runStartPhase();
+};
+
 const getResourcesForCellElement = (cell) => {
   if (!cell) {
     return {};
@@ -1656,7 +1847,14 @@ const renderSelectedCellDetails = (cell) => {
 
   const { row, col } = coordinates;
   const terrain = cell.dataset.terrainLabel || "Unknown terrain";
-  selectedCellDisplay.textContent = `${terrain} — ${formatCoordinates(row, col)}`;
+  let selectedText = `${terrain} — ${formatCoordinates(row, col)}`;
+  const capitalOwnerId = cell.dataset.capitalFaction;
+  if (capitalOwnerId) {
+    const capitalOwner = getFactionById(capitalOwnerId);
+    const capitalName = capitalOwner?.name ?? cell.dataset.capitalName ?? capitalOwnerId;
+    selectedText += ` — Capital of ${capitalName}`;
+  }
+  selectedCellDisplay.textContent = selectedText;
   const hasActiveFaction = Boolean(getActiveFaction());
   const canInteract = hasActiveFaction && isMainPhaseActive();
   addUnitButton.disabled = !canInteract;
@@ -1692,6 +1890,50 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
   renderSelectedCellDetails(selectedCell);
 };
 
+const attemptCapitalSelection = (cell) => {
+  if (!isCapitalSelectionActive()) {
+    return;
+  }
+
+  const requirement = getCapitalSelectionRequirement();
+  if (!requirement?.faction) {
+    return;
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    return;
+  }
+
+  const { faction, side } = requirement;
+
+  if (cell.dataset.capitalFaction) {
+    setCapitalSelectionError("This location already houses a capital.");
+    return;
+  }
+
+  if (!isColumnOnSide(coordinates.col, side)) {
+    setCapitalSelectionError(
+      `Choose a territory on the ${getCapitalSideLabel(side)}.`,
+    );
+    return;
+  }
+
+  setCapitalSelectionError();
+  capitalAssignments.set(faction.id, coordinates);
+  markCapitalCell(cell, faction);
+
+  capitalSelectionState.index += 1;
+
+  if (capitalSelectionState.index < factions.length) {
+    turnState.currentFactionIndex = capitalSelectionState.index;
+    updateTurnDisplay();
+    return;
+  }
+
+  completeCapitalSelection();
+};
+
 const handleSelect = (cell) => {
   if (selectedCell) {
     selectedCell.classList.remove("selected");
@@ -1704,6 +1946,7 @@ const handleSelect = (cell) => {
   selectedCell.focus({ preventScroll: true });
 
   renderSelectedCellDetails(cell);
+  attemptCapitalSelection(cell);
 };
 
 const createCell = (row, col) => {

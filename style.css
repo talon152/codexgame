@@ -125,6 +125,30 @@ body.modal-open {
   overflow: hidden;
 }
 
+.cell--capital {
+  border-color: rgba(230, 57, 70, 0.7);
+  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.35);
+}
+
+.cell-capital-badge {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(230, 57, 70, 0.85);
+  color: #fff5f5;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
 .cell-terrain {
   display: block;
   text-align: center;
