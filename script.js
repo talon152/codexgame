@@ -105,6 +105,14 @@ const UNIT_ROSTERS = {
   ],
 };
 
+const UNIT_STAT_LABELS = [
+  { key: "strength", label: "STR" },
+  { key: "attack", label: "ATK" },
+  { key: "defence", label: "DEF" },
+  { key: "hp", label: "HP" },
+  { key: "initiative", label: "INIT" },
+];
+
 const FACTIONS = [
   {
     id: "sun",
@@ -194,6 +202,22 @@ const updateAdvanceButton = () => {
 
 const getActiveFaction = () => FACTIONS[turnState.currentFactionIndex] ?? null;
 
+const createUnitStatsRow = (stats) => {
+  const statsRow = document.createElement("span");
+  statsRow.className = "unit-stats";
+
+  UNIT_STAT_LABELS.forEach(({ key, label }) => {
+    const statValue = stats?.[key];
+    const stat = document.createElement("span");
+    stat.textContent = `${label} ${
+      typeof statValue === "number" ? statValue : "—"
+    }`;
+    statsRow.appendChild(stat);
+  });
+
+  return statsRow;
+};
+
 const renderUnitPickerForActiveFaction = () => {
   const activeFaction = getActiveFaction();
   unitPickerGroups.innerHTML = "";
@@ -223,20 +247,7 @@ const renderUnitPickerForActiveFaction = () => {
     name.className = "unit-name";
     name.textContent = unit.name;
 
-    const statsRow = document.createElement("span");
-    statsRow.className = "unit-stats";
-
-    [
-      `STR ${unit.stats.strength}`,
-      `ATK ${unit.stats.attack}`,
-      `DEF ${unit.stats.defence}`,
-      `HP ${unit.stats.hp}`,
-      `INIT ${unit.stats.initiative}`,
-    ].forEach((label) => {
-      const stat = document.createElement("span");
-      stat.textContent = label;
-      statsRow.appendChild(stat);
-    });
+    const statsRow = createUnitStatsRow(unit.stats);
 
     button.append(name, statsRow);
     button.addEventListener("click", () =>
@@ -307,6 +318,21 @@ const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
 const getFactionById = (id) => FACTIONS.find((faction) => faction.id === id);
 
 const getCellKey = (row, col) => `${row}-${col}`;
+
+const getCellCoordinates = (cell) => {
+  if (!cell) {
+    return null;
+  }
+
+  const row = Number.parseInt(cell.dataset.row ?? "", 10);
+  const col = Number.parseInt(cell.dataset.col ?? "", 10);
+
+  if (Number.isNaN(row) || Number.isNaN(col)) {
+    return null;
+  }
+
+  return { row, col };
+};
 
 const getUnitsForCell = (row, col) => {
   const key = getCellKey(row, col);
@@ -849,20 +875,7 @@ const renderCellUnitList = (row, col) => {
     nameLabel.className = "unit-name";
     nameLabel.textContent = unit.name;
 
-    const statsRow = document.createElement("span");
-    statsRow.className = "unit-stats";
-
-    [
-      `STR ${unit.stats.strength}`,
-      `ATK ${unit.stats.attack}`,
-      `DEF ${unit.stats.defence}`,
-      `HP ${unit.stats.hp}`,
-      `INIT ${unit.stats.initiative}`,
-    ].forEach((label) => {
-      const stat = document.createElement("span");
-      stat.textContent = label;
-      statsRow.appendChild(stat);
-    });
+    const statsRow = createUnitStatsRow(unit.stats);
 
     listItem.appendChild(nameLabel);
     listItem.appendChild(factionLabel);
@@ -890,8 +903,15 @@ const renderSelectedCellDetails = (cell) => {
     return;
   }
 
-  const row = Number(cell.dataset.row);
-  const col = Number(cell.dataset.col);
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    selectedCellDisplay.textContent = "None";
+    addUnitButton.disabled = true;
+    toggleUnitPicker(false);
+    return;
+  }
+
+  const { row, col } = coordinates;
   const terrain = cell.dataset.terrainLabel || "Unknown terrain";
   selectedCellDisplay.textContent = `${terrain} — ${formatCoordinates(row, col)}`;
   addUnitButton.disabled = false;
@@ -911,8 +931,13 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
     return;
   }
 
-  const row = Number(selectedCell.dataset.row);
-  const col = Number(selectedCell.dataset.col);
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    toggleUnitPicker(false);
+    return;
+  }
+
+  const { row, col } = coordinates;
   const existingUnits = [...getUnitsForCell(row, col)];
   const unitInstance = createUnitInstance(factionId, template);
   existingUnits.push(unitInstance);
@@ -921,7 +946,7 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
   toggleUnitPicker(false);
 };
 
-const handleSelect = (cell, row, col) => {
+const handleSelect = (cell) => {
   if (selectedCell) {
     selectedCell.classList.remove("selected");
     selectedCell.setAttribute("aria-selected", "false");
@@ -941,8 +966,8 @@ const createCell = (row, col) => {
   const terrain = getRandomTerrain();
   cell.className = `cell ${terrain.className}`;
   cell.type = "button";
-  cell.dataset.row = row;
-  cell.dataset.col = col;
+  cell.dataset.row = row.toString();
+  cell.dataset.col = col.toString();
   cell.dataset.terrain = terrain.name;
   cell.dataset.terrainLabel = terrain.label;
   cell.setAttribute("role", "gridcell");
@@ -962,11 +987,11 @@ const createCell = (row, col) => {
 
   cell.append(terrainLabel, unitStack);
 
-  cell.addEventListener("click", () => handleSelect(cell, row, col));
+  cell.addEventListener("click", () => handleSelect(cell));
   cell.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleSelect(cell, row, col);
+      handleSelect(cell);
     }
   });
 
