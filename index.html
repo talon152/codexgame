@@ -60,22 +60,10 @@
             id="add-unit-button"
             type="button"
             class="add-unit-button"
-            aria-expanded="false"
             disabled
           >
-            Choose Unit
+            Add Units
           </button>
-          <div
-            id="unit-picker"
-            class="unit-picker"
-            hidden
-            aria-label="Choose a unit to place in the selected cell"
-          >
-            <p class="unit-picker-instructions">
-              Select a unit below to assign it to the highlighted grid cell.
-            </p>
-            <div id="unit-picker-groups" class="unit-picker-groups"></div>
-          </div>
         </section>
       </aside>
     </main>
@@ -301,6 +289,34 @@
             </li>
           </ul>
         </section>
+      </div>
+    </div>
+    <div id="unit-modal" class="unit-modal" hidden aria-hidden="true">
+      <div
+        class="unit-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unit-modal-title"
+      >
+        <header class="unit-dialog-header">
+          <div>
+            <p id="unit-modal-faction" class="unit-dialog-faction"></p>
+            <h2 id="unit-modal-title" class="unit-dialog-title">Select a Unit</h2>
+          </div>
+          <button
+            id="unit-modal-close"
+            type="button"
+            class="unit-dialog-close"
+            aria-label="Close unit selection"
+          >
+            Close
+          </button>
+        </header>
+        <p class="unit-dialog-instructions">
+          Choose a unit to deploy to the highlighted cell. Each entry shows its
+          battlefield speciality and core statistics.
+        </p>
+        <ul id="unit-modal-list" class="unit-modal-list" role="list"></ul>
       </div>
     </div>
     <script src="script.js"></script>
