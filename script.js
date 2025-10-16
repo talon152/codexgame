@@ -17,6 +17,7 @@ const advancePhaseButton = document.getElementById("advance-phase");
 const cellUnitList = document.getElementById("cell-unit-list");
 const cellResourceList = document.getElementById("cell-resource-list");
 const addUnitButton = document.getElementById("add-unit-button");
+const capitalGuidance = document.getElementById("capital-guidance");
 const unitModal = document.getElementById("unit-modal");
 const unitModalList = document.getElementById("unit-modal-list");
 const unitModalCloseButton = document.getElementById("unit-modal-close");
@@ -172,10 +173,26 @@ const capitalSelectionState = {
 
 const isCapitalSelectionActive = () => capitalSelectionState.isActive;
 
-const getCapitalSide = (index) => (index % 2 === 0 ? "west" : "east");
+const getCapitalZone = (index) => (index % 2 === 0 ? "north" : "south");
 
-const getCapitalSideLabel = (side) =>
-  side === "west" ? "western half of the map" : "eastern half of the map";
+const getCapitalZoneLabel = (zone) =>
+  zone === "north" ? "top third of the map" : "bottom third of the map";
+
+const getZoneRowLimit = () => {
+  const limit = Math.floor(GRID_SIZE / 3);
+  return limit > 0 ? limit : 1;
+};
+
+const isRowInZone = (row, zone) => {
+  const zoneDepth = getZoneRowLimit();
+
+  if (zone === "north") {
+    return row < zoneDepth;
+  }
+
+  const minimum = GRID_SIZE - zoneDepth;
+  return row >= minimum;
+};
 
 const getCapitalSelectionRequirement = () => {
   if (!isCapitalSelectionActive()) {
@@ -188,22 +205,47 @@ const getCapitalSelectionRequirement = () => {
     return null;
   }
 
-  return { faction, side: getCapitalSide(capitalSelectionState.index) };
-};
-
-const isColumnOnSide = (col, side) => {
-  if (side === "west") {
-    const limit = Math.floor((GRID_SIZE - 1) / 2);
-    return col <= limit;
-  }
-
-  const minimum = Math.ceil((GRID_SIZE - 1) / 2);
-  return col >= minimum;
+  return { faction, zone: getCapitalZone(capitalSelectionState.index) };
 };
 
 const setCapitalSelectionError = (message = "") => {
   capitalSelectionState.error = message;
   updatePhaseDisplay();
+};
+
+const updateCapitalHighlights = () => {
+  if (!mapGrid) {
+    return;
+  }
+
+  const cells = Array.from(mapGrid.querySelectorAll(".cell"));
+  cells.forEach((cell) => {
+    cell.classList.remove("cell--capital-eligible");
+  });
+
+  if (!isCapitalSelectionActive()) {
+    return;
+  }
+
+  const requirement = getCapitalSelectionRequirement();
+  if (!requirement?.zone) {
+    return;
+  }
+
+  cells.forEach((cell) => {
+    if (cell.dataset.capitalFaction) {
+      return;
+    }
+
+    const coordinates = getCellCoordinates(cell);
+    if (!coordinates) {
+      return;
+    }
+
+    if (isRowInZone(coordinates.row, requirement.zone)) {
+      cell.classList.add("cell--capital-eligible");
+    }
+  });
 };
 
 const markCapitalCell = (cell, faction) => {
@@ -275,8 +317,8 @@ const updatePhaseDisplay = () => {
 
     if (requirement?.faction) {
       summaryParts.push(
-        `${requirement.faction.name} must claim a capital on the ${getCapitalSideLabel(
-          requirement.side,
+        `${requirement.faction.name} must claim a capital in the ${getCapitalZoneLabel(
+          requirement.zone,
         )}.`,
       );
     } else {
@@ -291,17 +333,44 @@ const updatePhaseDisplay = () => {
       phaseSummaryDisplay.textContent = summaryParts.join(" ");
     }
 
+    if (capitalGuidance) {
+      const guidanceParts = [];
+
+      if (requirement?.faction) {
+        guidanceParts.push(
+          `Click any highlighted cell in the ${getCapitalZoneLabel(
+            requirement.zone,
+          )} to claim ${requirement.faction.name}'s capital.`,
+        );
+      } else {
+        guidanceParts.push("Choose highlighted cells to designate each capital.");
+      }
+
+      if (capitalSelectionState.error) {
+        guidanceParts.push(capitalSelectionState.error);
+      }
+
+      capitalGuidance.textContent = guidanceParts.join(" ");
+      capitalGuidance.hidden = guidanceParts.length === 0;
+    }
+
     Array.from(phaseListElement.children).forEach((item) => {
       item.classList.remove("is-active", "is-complete");
       item.removeAttribute("aria-current");
     });
 
+    updateCapitalHighlights();
     return;
   }
 
   const activePhase = TURN_PHASES[turnState.currentPhaseIndex];
   phaseNameDisplay.textContent = activePhase.label;
   phaseSummaryDisplay.textContent = activePhase.summary;
+
+  if (capitalGuidance) {
+    capitalGuidance.textContent = "";
+    capitalGuidance.hidden = true;
+  }
 
   Array.from(phaseListElement.children).forEach((item, index) => {
     const isActive = index === turnState.currentPhaseIndex;
@@ -315,6 +384,8 @@ const updatePhaseDisplay = () => {
       item.removeAttribute("aria-current");
     }
   });
+
+  updateCapitalHighlights();
 };
 
 const updateFactionDisplay = () => {
@@ -593,6 +664,7 @@ const resetBoardState = () => {
 
   mapGrid.querySelectorAll(".cell").forEach((cell) => {
     cell.classList.remove("cell--capital");
+    cell.classList.remove("cell--capital-eligible");
     delete cell.dataset.capitalFaction;
     delete cell.dataset.capitalName;
     const badge = cell.querySelector(".cell-capital-badge");
@@ -1905,16 +1977,16 @@ const attemptCapitalSelection = (cell) => {
     return;
   }
 
-  const { faction, side } = requirement;
+  const { faction, zone } = requirement;
 
   if (cell.dataset.capitalFaction) {
     setCapitalSelectionError("This location already houses a capital.");
     return;
   }
 
-  if (!isColumnOnSide(coordinates.col, side)) {
+  if (!isRowInZone(coordinates.row, zone)) {
     setCapitalSelectionError(
-      `Choose a territory on the ${getCapitalSideLabel(side)}.`,
+      `Choose a territory in the ${getCapitalZoneLabel(zone)}.`,
     );
     return;
   }
