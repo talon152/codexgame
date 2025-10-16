@@ -9,7 +9,17 @@
   <body>
     <main class="layout">
       <section class="board-panel" aria-label="Game board">
-        <h1 class="app-title">Codex Strategy Prototype</h1>
+        <header class="panel-header">
+          <h1 class="app-title">Codex Strategy Prototype</h1>
+          <button
+            id="help-button"
+            type="button"
+            class="help-button"
+            aria-haspopup="dialog"
+          >
+            Help
+          </button>
+        </header>
         <div id="map-grid" class="map-grid" role="grid" aria-labelledby="grid-caption"></div>
         <p id="grid-caption" class="sr-only">
           Select a cell to learn its terrain type and coordinates.
@@ -109,6 +119,188 @@
         <button id="battle-close" type="button" class="battle-close-button" disabled>
           Continue
         </button>
+      </div>
+    </div>
+    <div id="help-modal" class="help-modal" hidden aria-hidden="true">
+      <div
+        class="help-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-title"
+        aria-describedby="help-tablist"
+      >
+        <header class="help-header">
+          <h2 id="help-title" class="help-title">Codex Strategy Guide</h2>
+          <button id="help-close" type="button" class="help-close-button" aria-label="Close help">
+            Close
+          </button>
+        </header>
+        <div id="help-tablist" class="help-tabs" role="tablist" aria-label="Help topics">
+          <button
+            id="help-tab-combat"
+            type="button"
+            class="help-tab"
+            role="tab"
+            aria-selected="true"
+            aria-controls="help-panel-combat"
+            data-help-tab="combat"
+            tabindex="0"
+          >
+            Combat Basics
+          </button>
+          <button
+            id="help-tab-turns"
+            type="button"
+            class="help-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="help-panel-turns"
+            data-help-tab="turns"
+            tabindex="-1"
+          >
+            Turn Flow
+          </button>
+          <button
+            id="help-tab-terrain"
+            type="button"
+            class="help-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="help-panel-terrain"
+            data-help-tab="terrain"
+            tabindex="-1"
+          >
+            Terrain & Positioning
+          </button>
+        </div>
+        <section
+          id="help-panel-combat"
+          class="help-panel"
+          role="tabpanel"
+          aria-labelledby="help-tab-combat"
+          data-help-panel="combat"
+        >
+          <h3>Resolving Combat Step by Step</h3>
+          <p>
+            When opposing armies share a hex, the combat resolver compares every
+            engaged unit stack from top to bottom. The following checklist shows
+            how damage is calculated and applied during an exchange.
+          </p>
+          <ol class="help-list">
+            <li>
+              <strong>Establish initiative order:</strong> Units act from
+              highest to lowest <em>initiative</em>. If values tie, the active
+              faction's unit swings first.
+            </li>
+            <li>
+              <strong>Determine the attack roll:</strong> The attacking unit's
+              <em>attack</em> rating is added to a d6 combat die (averaging 3.5).
+              Effects from cards, terrain, or morale are included at this stage.
+            </li>
+            <li>
+              <strong>Compare against defence:</strong> Subtract the defender's
+              <em>defence</em> rating from the modified attack roll. The result
+              is the raw hit strength. Negative results mean the blow glances
+              off and no damage is dealt.
+            </li>
+            <li>
+              <strong>Scale by strength:</strong> Multiply the hit strength by
+              the attacker's <em>strength</em> to convert the hit into damage
+              points. Round fractions down; critical effects may override this.
+            </li>
+            <li>
+              <strong>Apply terrain modifiers:</strong> Certain hexes adjust the
+              damage after scaling. For example, forests reduce incoming ranged
+              damage by 2, while villages grant the defender 1 point of healing
+              before damage is recorded.
+            </li>
+            <li>
+              <strong>Reduce hit points:</strong> Subtract the final damage from
+              the defender's <em>hp</em>. When a unit's hp reaches zero it is
+              removed from the stack. Surplus damage spills to the next unit in
+              line, representing the clash continuing.
+            </li>
+            <li>
+              <strong>Check for morale breaks:</strong> If more than half the
+              defending army falls in a single round, remaining units must pass a
+              morale test (2d6 &ge; 7) or retreat to an adjacent hex.
+            </li>
+          </ol>
+          <p>
+            Combat continues alternating initiative passes until all units on one
+            side are eliminated or forced to withdraw. Healing, summoning, and
+            reinforcement effects can trigger between rounds but never interrupt a
+            single strike resolution.
+          </p>
+        </section>
+        <section
+          id="help-panel-turns"
+          class="help-panel is-hidden"
+          role="tabpanel"
+          aria-labelledby="help-tab-turns"
+          data-help-panel="turns"
+          hidden
+        >
+          <h3>Turn Structure</h3>
+          <p>
+            Each turn has three phases. Use them to stage your forces and decide
+            when to commit to combat.
+          </p>
+          <ul class="help-list">
+            <li>
+              <strong>Start Phase:</strong> Ready exhausted units, resolve upkeep
+              triggers, and refresh resources.
+            </li>
+            <li>
+              <strong>Main Phase:</strong> Deploy new units, issue movement
+              orders, and play tactics to reposition your army.
+            </li>
+            <li>
+              <strong>End Phase:</strong> Clean up lingering effects and queue
+              any battles that emerged during the turn.
+            </li>
+          </ul>
+          <p>
+            When the End Phase finishes, any contested hexes are passed to the
+            combat resolver shown elsewhere in this prototype.
+          </p>
+        </section>
+        <section
+          id="help-panel-terrain"
+          class="help-panel is-hidden"
+          role="tabpanel"
+          aria-labelledby="help-tab-terrain"
+          data-help-panel="terrain"
+          hidden
+        >
+          <h3>Terrain &amp; Positioning</h3>
+          <p>
+            Terrain dramatically alters combat outcomes. Plan your movements to
+            exploit its bonuses.
+          </p>
+          <ul class="help-list">
+            <li>
+              <strong>Forest:</strong> Grants defenders +1 defence and softens
+              ranged attacks.
+            </li>
+            <li>
+              <strong>Mountains:</strong> Provide +2 initiative for occupying
+              units but limit cavalry strength to 4.
+            </li>
+            <li>
+              <strong>Villages:</strong> Offer sanctuary healing 2 hp to each
+              friendly unit after combat.
+            </li>
+            <li>
+              <strong>Swamps:</strong> Reduce all movement by 1 and impose a -1
+              attack penalty on non-native units.
+            </li>
+            <li>
+              <strong>Water:</strong> Only amphibious or flying units may
+              initiate attacks from water hexes.
+            </li>
+          </ul>
+        </section>
       </div>
     </div>
     <script src="script.js"></script>
