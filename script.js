@@ -954,7 +954,159 @@ const appendBattleLog = (message) => {
   battleLogEntries.scrollTop = battleLogEntries.scrollHeight;
 };
 
-const openBattleModal = ({ row, col, topFactionName, bottomFactionName }) => {
+const getCellElementAt = (row, col) => {
+  if (!mapGrid) {
+    return null;
+  }
+
+  return mapGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+};
+
+const getCellTerrainInfo = (row, col) => {
+  const cell = getCellElementAt(row, col);
+  if (!cell) {
+    return null;
+  }
+
+  const name = cell.dataset?.terrain ?? null;
+  if (!name) {
+    return null;
+  }
+
+  const label = cell.dataset?.terrainLabel ?? name;
+  return { name, label };
+};
+
+const TERRAIN_MODIFIABLE_STATS = new Set([
+  "attack",
+  "defence",
+  "strength",
+  "initiative",
+]);
+
+const TERRAIN_STAT_LABELS = {
+  attack: "ATK",
+  defence: "DEF",
+  strength: "STR",
+  initiative: "INIT",
+};
+
+const formatTerrainModifierSummary = (unit, modifiers, terrainLabel) => {
+  const entries = Object.entries(modifiers).filter(([, value]) =>
+    Number.isFinite(value),
+  );
+
+  if (entries.length === 0) {
+    return "";
+  }
+
+  const parts = entries.map(([key, value]) => ({
+    key,
+    value,
+    label: TERRAIN_STAT_LABELS[key] ?? key.toUpperCase(),
+  }));
+
+  const positives = parts.filter(({ value }) => value > 0);
+  const negatives = parts.filter(({ value }) => value < 0);
+
+  const formatPart = ({ label, value }) =>
+    `${value > 0 ? "+" : ""}${value} ${label}`;
+
+  const locationText = terrainLabel ? ` on the ${terrainLabel}` : "";
+
+  let message;
+
+  if (positives.length > 0 && negatives.length > 0) {
+    message = `${unit.name} gains ${positives
+      .map(formatPart)
+      .join(", ")} but suffers ${negatives.map(formatPart).join(", ")}`;
+  } else if (positives.length > 0) {
+    message = `${unit.name} gains ${positives.map(formatPart).join(", ")}`;
+  } else {
+    message = `${unit.name} suffers ${negatives.map(formatPart).join(", ")}`;
+  }
+
+  return `${message}${locationText}.`;
+};
+
+const applyTerrainModifiersToUnits = (units, terrainInfo) => {
+  const terrainName = terrainInfo?.name;
+  const terrainLabel = terrainInfo?.label;
+
+  if (!terrainName) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  const adjustments = [];
+  const summaries = [];
+
+  units.forEach((unit) => {
+    if (!unit || typeof unit !== "object") {
+      return;
+    }
+
+    const modifiers = unit.terrainModifiers?.[terrainName];
+    if (!modifiers) {
+      return;
+    }
+
+    const applicableEntries = Object.entries(modifiers).filter(
+      ([stat, delta]) =>
+        TERRAIN_MODIFIABLE_STATS.has(stat) && Number.isFinite(delta),
+    );
+
+    if (applicableEntries.length === 0) {
+      return;
+    }
+
+    const original = {};
+    const appliedModifiers = {};
+
+    applicableEntries.forEach(([stat, delta]) => {
+      if (!Number.isFinite(unit.stats?.[stat])) {
+        return;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(original, stat)) {
+        original[stat] = unit.stats[stat];
+      }
+
+      unit.stats[stat] = Math.max(0, unit.stats[stat] + delta);
+      appliedModifiers[stat] = delta;
+    });
+
+    const originalKeys = Object.keys(original);
+    if (originalKeys.length === 0) {
+      return;
+    }
+
+    adjustments.push({ unit, original });
+
+    const summary = formatTerrainModifierSummary(unit, appliedModifiers, terrainLabel);
+    if (summary) {
+      summaries.push(summary.trim());
+    }
+  });
+
+  return {
+    revert: () => {
+      adjustments.forEach(({ unit, original }) => {
+        Object.entries(original).forEach(([stat, value]) => {
+          unit.stats[stat] = value;
+        });
+      });
+    },
+    summaries,
+  };
+};
+
+const openBattleModal = ({
+  row,
+  col,
+  topFactionName,
+  bottomFactionName,
+  terrainLabel,
+}) => {
   if (!battleModal) {
     return;
   }
@@ -987,7 +1139,10 @@ const openBattleModal = ({ row, col, topFactionName, bottomFactionName }) => {
   }
 
   if (battleLocationDisplay) {
-    battleLocationDisplay.textContent = `${formatCoordinates(row, col)}`;
+    const locationText = terrainLabel
+      ? `${formatCoordinates(row, col)} — ${terrainLabel}`
+      : `${formatCoordinates(row, col)}`;
+    battleLocationDisplay.textContent = locationText;
   }
 
   if (battleCloseButton) {
@@ -1125,12 +1280,19 @@ const runBattleForCell = async ({ row, col, units }) => {
     bottomFactionIds.includes(unit.factionId),
   );
 
+  const terrainInfo = getCellTerrainInfo(row, col);
+  const terrainLabel = terrainInfo?.label ?? null;
+
   openBattleModal({
     row,
     col,
     topFactionName,
     bottomFactionName,
+    terrainLabel,
   });
+
+  const { revert: revertTerrainModifiers, summaries: terrainSummaries } =
+    applyTerrainModifiersToUnits(units, terrainInfo);
 
   const unitElements = new Map();
 
@@ -1151,6 +1313,12 @@ const runBattleForCell = async ({ row, col, units }) => {
   });
 
   appendBattleLog(`${topFactionName} engage ${bottomFactionName}.`);
+  if (terrainLabel) {
+    appendBattleLog(`The clash erupts on the ${terrainLabel}.`);
+  }
+  terrainSummaries.forEach((summary) => {
+    appendBattleLog(summary);
+  });
 
   const allUnits = () => [...topUnits, ...bottomUnits];
   const livingTop = () => topUnits.filter((unit) => unit.stats.hp > 0);
@@ -1266,6 +1434,8 @@ const runBattleForCell = async ({ row, col, units }) => {
 
   appendBattleLog(outcomeMessage);
 
+  revertTerrainModifiers();
+
   const survivors = units.filter((unit) => unit.stats.hp > 0);
   setUnitsForCell(row, col, survivors);
 
@@ -1311,6 +1481,14 @@ const createUnitInstance = (factionId, template) => ({
   role: template.role,
   detail: template.detail,
   traits: Array.isArray(template.traits) ? [...template.traits] : [],
+  terrainModifiers: template.terrainModifiers
+    ? Object.fromEntries(
+        Object.entries(template.terrainModifiers).map(([terrain, modifiers]) => [
+          terrain,
+          { ...modifiers },
+        ]),
+      )
+    : {},
   maxHp: typeof template.stats?.hp === "number" ? template.stats.hp : null,
   stats: { ...template.stats },
   cost: { ...template.cost },
