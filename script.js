@@ -10,8 +10,10 @@ const phaseListElement = document.getElementById("phase-list");
 const advancePhaseButton = document.getElementById("advance-phase");
 const cellUnitList = document.getElementById("cell-unit-list");
 const addUnitButton = document.getElementById("add-unit-button");
-const unitPicker = document.getElementById("unit-picker");
-const unitPickerGroups = document.getElementById("unit-picker-groups");
+const unitModal = document.getElementById("unit-modal");
+const unitModalList = document.getElementById("unit-modal-list");
+const unitModalCloseButton = document.getElementById("unit-modal-close");
+const unitModalFactionLabel = document.getElementById("unit-modal-faction");
 const battleModal = document.getElementById("battle-modal");
 const battleTopList = document.getElementById("battle-top-units");
 const battleBottomList = document.getElementById("battle-bottom-units");
@@ -53,26 +55,71 @@ const UNIT_ROSTERS = {
     {
       id: "radiant-vanguard",
       name: "Radiant Vanguard",
+      role: "Sanctified infantry",
+      description:
+        "Shield-bearing infantry that fortify villages to benefit from sanctuary healing.",
+      detail:
+        "The Vanguard hold the line while radiating protective wards that help allies recover between exchanges.",
+      traits: [
+        "Sanctuary Bulwark: Gain +2 DEF while occupying a village hex.",
+        "Guardian Halo: Adjacent allies recover 2 HP when the Vanguard survives a combat round.",
+      ],
       stats: { strength: 7, attack: 6, defence: 5, hp: 18, initiative: 6 },
     },
     {
       id: "dawnblade-cavalry",
       name: "Dawnblade Cavalry",
+      role: "Shock cavalry",
+      description:
+        "Lightning-quick riders that excel on plains but lose momentum scaling mountains.",
+      detail:
+        "Dawnblade outriders focus on flanking strikes that disrupt the enemy line before withdrawing to safety.",
+      traits: [
+        "Skirmish Dash: May move after attacking if starting from a plain hex.",
+        "Momentum Drop: Strength reduced by 2 when ending movement on a mountain hex.",
+      ],
       stats: { strength: 6, attack: 8, defence: 4, hp: 16, initiative: 8 },
     },
     {
       id: "luminar-arcanist",
       name: "Luminar Arcanist",
+      role: "Ranged battlemage",
+      description:
+        "Radiant bolts cut through swamp mists to negate attack penalties for allied casters.",
+      detail:
+        "The arcanists specialise in burning away cover, softening entrenched foes before the infantry advance.",
+      traits: [
+        "Piercing Flare: Ignore the swamp attack penalty when casting from range.",
+        "Beacon Sigil: Marked targets grant +1 ATK to subsequent magical attacks this round.",
+      ],
       stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7 },
     },
     {
       id: "aegis-sentinels",
       name: "Aegis Sentinels",
+      role: "Phalanx guardians",
+      description:
+        "Armoured wardens that anchor forest approaches, leveraging the defensive bonus to hold the line.",
+      detail:
+        "Sentinels form immovable bulwarks that slow enemy assaults while ranged allies pick them apart.",
+      traits: [
+        "Verdant Bastion: Gain +1 DEF from forest terrain bonuses (total +2).",
+        "Stalwart Advance: Cannot be forced to retreat by morale checks.",
+      ],
       stats: { strength: 8, attack: 5, defence: 7, hp: 20, initiative: 4 },
     },
     {
       id: "solar-skirmisher",
       name: "Solar Skirmisher",
+      role: "Forward scout",
+      description:
+        "Flexible outrider who scouts villages and forests before a major advance.",
+      detail:
+        "Skirmishers screen the army, striking opportunistically and relaying enemy movements back to command.",
+      traits: [
+        "Trailblazer: Reveals hidden enemy stacks in adjacent forest hexes.",
+        "Supply Cache: When ending in a village, restore 1 spent tactic card.",
+      ],
       stats: { strength: 6, attack: 6, defence: 4, hp: 15, initiative: 7 },
     },
   ],
@@ -80,26 +127,71 @@ const UNIT_ROSTERS = {
     {
       id: "twilight-assassins",
       name: "Twilight Assassins",
+      role: "Stealth operatives",
+      description:
+        "Shadowy blades that bypass village sentries during nightfall strikes.",
+      detail:
+        "Assassins pick apart isolated targets, spreading fear through the enemy line before open battle begins.",
+      traits: [
+        "Veiled Approach: Ignore zone-of-control when moving through village hexes at night.",
+        "Deathmark: First strike each battle deals +2 ATK if the target acted this phase.",
+      ],
       stats: { strength: 7, attack: 9, defence: 4, hp: 14, initiative: 9 },
     },
     {
       id: "umbral-wardens",
       name: "Umbral Wardens",
+      role: "Bulwark defenders",
+      description:
+        "Obsidian guardians who thrive in forests, turning terrain bonuses into impenetrable cover.",
+      detail:
+        "Wardens entrench themselves to channel moonlit barriers that blunt even the fiercest charges.",
+      traits: [
+        "Nightroot Aegis: Forest hexes grant +2 DEF instead of +1.",
+        "Ward of Stillness: Enemy cavalry entering the wardens' hex lose 1 movement next round.",
+      ],
       stats: { strength: 6, attack: 5, defence: 8, hp: 19, initiative: 5 },
     },
     {
       id: "lunar-sages",
       name: "Lunar Sages",
+      role: "Support casters",
+      description:
+        "Diviners whose tidal rites let amphibious allies launch assaults from water hexes.",
+      detail:
+        "Sages manipulate tides and moonlight to reposition allies while flooding enemies with debilitating hexes.",
+      traits: [
+        "Tidal Bridge: Amphibious allies ignore water movement restrictions when adjacent to the sages.",
+        "Moonward Pulse: Heal 3 HP on one ally that starts the phase on water.",
+      ],
       stats: { strength: 5, attack: 7, defence: 5, hp: 16, initiative: 6 },
     },
     {
       id: "nightglide-riders",
       name: "Nightglide Riders",
+      role: "Flying cavalry",
+      description:
+        "Glide over swamps to strike without suffering movement loss or attack penalties.",
+      detail:
+        "Riders loop in crescent patterns, harrying foes while scouting behind enemy lines for weak points.",
+      traits: [
+        "Swamp Skip: Ignore swamp movement penalties and attack penalties.",
+        "Sky Harriers: Gain +1 INIT when beginning combat from a higher elevation hex such as mountains.",
+      ],
       stats: { strength: 6, attack: 8, defence: 5, hp: 17, initiative: 8 },
     },
     {
       id: "veilbreakers",
       name: "Veilbreakers",
+      role: "Siege breakers",
+      description:
+        "Siege specialists who batter mountain holds despite the cramped elevation.",
+      detail:
+        "Veilbreakers dismantle fortifications with seismic crescents that shatter rockbound defenses.",
+      traits: [
+        "Resonant Shatter: Ignore the strength cap imposed on cavalry in mountain hexes.",
+        "Fracture Wave: First successful hit reduces target DEF by 1 for the battle.",
+      ],
       stats: { strength: 8, attack: 7, defence: 6, hp: 18, initiative: 6 },
     },
   ],
@@ -209,6 +301,7 @@ const createUnitStatsRow = (stats) => {
   UNIT_STAT_LABELS.forEach(({ key, label }) => {
     const statValue = stats?.[key];
     const stat = document.createElement("span");
+    stat.className = "unit-stat";
     stat.textContent = `${label} ${
       typeof statValue === "number" ? statValue : "—"
     }`;
@@ -218,56 +311,156 @@ const createUnitStatsRow = (stats) => {
   return statsRow;
 };
 
-const renderUnitPickerForActiveFaction = () => {
+const renderUnitModalOptions = () => {
+  if (!unitModalList) {
+    return null;
+  }
+
+  unitModalList.innerHTML = "";
+
   const activeFaction = getActiveFaction();
-  unitPickerGroups.innerHTML = "";
+
+  if (unitModalFactionLabel) {
+    unitModalFactionLabel.textContent = activeFaction
+      ? `${activeFaction.name} roster`
+      : "";
+  }
 
   if (!activeFaction) {
-    return;
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "unit-modal-empty";
+    emptyMessage.textContent = "No faction is currently active.";
+    unitModalList.appendChild(emptyMessage);
+    return null;
   }
 
   const units = UNIT_ROSTERS[activeFaction.id] ?? [];
-  const group = document.createElement("section");
-  group.className = "unit-picker-group";
 
-  const title = document.createElement("h3");
-  title.className = "unit-picker-group-title";
-  title.textContent = activeFaction.name;
+  if (units.length === 0) {
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "unit-modal-empty";
+    emptyMessage.textContent = "This faction has no units available.";
+    unitModalList.appendChild(emptyMessage);
+    return null;
+  }
 
-  const list = document.createElement("ul");
-  list.className = "unit-picker-list";
+  let firstButton = null;
 
   units.forEach((unit) => {
     const listItem = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "unit-option";
+    listItem.className = "unit-modal-item";
+
+    const selectButton = document.createElement("button");
+    selectButton.type = "button";
+    selectButton.className = "unit-modal-option";
+    selectButton.dataset.unitId = unit.id;
+
+    const summaryRow = document.createElement("div");
+    summaryRow.className = "unit-modal-summary";
 
     const name = document.createElement("span");
     name.className = "unit-name";
     name.textContent = unit.name;
+    summaryRow.appendChild(name);
+
+    if (unit.role) {
+      const role = document.createElement("span");
+      role.className = "unit-role";
+      role.textContent = unit.role;
+      summaryRow.appendChild(role);
+    }
 
     const statsRow = createUnitStatsRow(unit.stats);
+    const description = document.createElement("span");
+    description.className = "unit-description";
+    description.textContent = unit.description ?? "";
 
-    button.append(name, statsRow);
-    button.addEventListener("click", () =>
-      handleAddUnitToSelectedCell(activeFaction.id, unit),
+    selectButton.append(summaryRow, statsRow, description);
+    selectButton.addEventListener("click", () => {
+      handleAddUnitToSelectedCell(activeFaction.id, unit);
+      closeUnitModal();
+    });
+
+    if (!firstButton) {
+      firstButton = selectButton;
+    }
+
+    const expandButton = document.createElement("button");
+    expandButton.type = "button";
+    expandButton.className = "unit-modal-expand";
+    const expandId = `${unit.id}-expand`;
+    expandButton.id = expandId;
+    expandButton.setAttribute("aria-expanded", "false");
+    const detailsId = `${unit.id}-details`;
+    expandButton.setAttribute("aria-controls", detailsId);
+    expandButton.textContent = "Show details";
+    expandButton.setAttribute(
+      "aria-label",
+      `Show details for ${unit.name}`,
     );
 
-    listItem.appendChild(button);
-    list.appendChild(listItem);
+    const detailPanel = document.createElement("div");
+    detailPanel.className = "unit-modal-details";
+    detailPanel.id = detailsId;
+    detailPanel.hidden = true;
+    detailPanel.setAttribute("role", "region");
+    detailPanel.setAttribute("aria-labelledby", expandId);
+
+    if (unit.detail) {
+      const detailText = document.createElement("p");
+      detailText.className = "unit-detail-text";
+      detailText.textContent = unit.detail;
+      detailPanel.appendChild(detailText);
+    }
+
+    if (Array.isArray(unit.traits) && unit.traits.length > 0) {
+      const traitHeading = document.createElement("p");
+      traitHeading.className = "unit-trait-heading";
+      traitHeading.textContent = "Traits";
+
+      const traitList = document.createElement("ul");
+      traitList.className = "unit-trait-list";
+
+      unit.traits.forEach((trait) => {
+        const traitItem = document.createElement("li");
+        traitItem.textContent = trait;
+        traitList.appendChild(traitItem);
+      });
+
+      detailPanel.append(traitHeading, traitList);
+    }
+
+    if (detailPanel.childElementCount > 0) {
+      expandButton.addEventListener("click", () => {
+        const isExpanded = expandButton.getAttribute("aria-expanded") === "true";
+        const nextState = !isExpanded;
+        expandButton.setAttribute("aria-expanded", String(nextState));
+        expandButton.textContent = nextState ? "Hide details" : "Show details";
+        expandButton.setAttribute(
+          "aria-label",
+          `${nextState ? "Hide" : "Show"} details for ${unit.name}`,
+        );
+        detailPanel.hidden = !nextState;
+        listItem.classList.toggle("is-expanded", nextState);
+      });
+
+      listItem.append(selectButton, expandButton, detailPanel);
+    } else {
+      expandButton.hidden = true;
+      expandButton.setAttribute("aria-hidden", "true");
+      listItem.append(selectButton);
+    }
+
+    unitModalList.appendChild(listItem);
   });
 
-  group.append(title, list);
-  unitPickerGroups.appendChild(group);
+  return firstButton;
 };
 
 const updateTurnDisplay = () => {
   updateFactionDisplay();
   updatePhaseDisplay();
   updateAdvanceButton();
-  renderUnitPickerForActiveFaction();
-  toggleUnitPicker(false);
 };
 
 const advancePhase = async () => {
@@ -355,6 +548,23 @@ const wait = (ms) =>
 
 let helpReturnFocusElement = null;
 let battleReturnFocusElement = null;
+let unitModalReturnFocusElement = null;
+
+const isModalVisible = (modalElement) =>
+  Boolean(modalElement) &&
+  modalElement.getAttribute("aria-hidden") === "false";
+
+const syncBodyModalState = () => {
+  if (
+    isModalVisible(helpModal) ||
+    isModalVisible(battleModal) ||
+    isModalVisible(unitModal)
+  ) {
+    document.body.classList.add("modal-open");
+  } else {
+    document.body.classList.remove("modal-open");
+  }
+};
 
 const setActiveHelpTab = (tabId, { focusTab = false } = {}) => {
   if (helpTabButtons.length === 0 || helpPanels.length === 0) {
@@ -394,7 +604,7 @@ const openHelpModal = () => {
 
   helpModal.hidden = false;
   helpModal.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
+  syncBodyModalState();
   setActiveHelpTab("combat", { focusTab: true });
 };
 
@@ -405,7 +615,7 @@ const closeHelpModal = () => {
 
   helpModal.hidden = true;
   helpModal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
+  syncBodyModalState();
 
   if (
     helpReturnFocusElement instanceof HTMLElement &&
@@ -415,6 +625,46 @@ const closeHelpModal = () => {
   }
 
   helpReturnFocusElement = null;
+};
+
+const openUnitModal = () => {
+  if (!unitModal || !selectedCell || addUnitButton.disabled) {
+    return;
+  }
+
+  unitModalReturnFocusElement =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  const firstButton = renderUnitModalOptions();
+
+  unitModal.hidden = false;
+  unitModal.setAttribute("aria-hidden", "false");
+  syncBodyModalState();
+
+  if (firstButton) {
+    firstButton.focus({ preventScroll: true });
+  } else if (unitModalCloseButton) {
+    unitModalCloseButton.focus({ preventScroll: true });
+  }
+};
+
+const closeUnitModal = () => {
+  if (!unitModal) {
+    return;
+  }
+
+  unitModal.hidden = true;
+  unitModal.setAttribute("aria-hidden", "true");
+  syncBodyModalState();
+
+  if (
+    unitModalReturnFocusElement instanceof HTMLElement &&
+    document.contains(unitModalReturnFocusElement)
+  ) {
+    unitModalReturnFocusElement.focus({ preventScroll: true });
+  }
+
+  unitModalReturnFocusElement = null;
 };
 
 const focusAdjacentHelpTab = (currentIndex, offset) => {
@@ -492,6 +742,7 @@ const openBattleModal = ({ row, col, topFactionName, bottomFactionName }) => {
 
   battleModal.hidden = false;
   battleModal.setAttribute("aria-hidden", "false");
+  syncBodyModalState();
 
   if (battleTopList) {
     battleTopList.innerHTML = "";
@@ -530,6 +781,7 @@ const closeBattleModal = () => {
 
   battleModal.hidden = true;
   battleModal.setAttribute("aria-hidden", "true");
+  syncBodyModalState();
 
   if (battleReturnFocusElement) {
     battleReturnFocusElement.focus({ preventScroll: true });
@@ -833,6 +1085,10 @@ const createUnitInstance = (factionId, template) => ({
   templateId: template.id,
   name: template.name,
   factionId,
+  description: template.description,
+  role: template.role,
+  detail: template.detail,
+  traits: Array.isArray(template.traits) ? [...template.traits] : [],
   stats: { ...template.stats },
 });
 
@@ -878,16 +1134,23 @@ const renderCellUnitList = (row, col) => {
     const statsRow = createUnitStatsRow(unit.stats);
 
     listItem.appendChild(nameLabel);
+    if (unit.role) {
+      const roleLabel = document.createElement("span");
+      roleLabel.className = "unit-role";
+      roleLabel.textContent = unit.role;
+      listItem.appendChild(roleLabel);
+    }
     listItem.appendChild(factionLabel);
+    if (unit.description) {
+      const description = document.createElement("span");
+      description.className = "unit-description";
+      description.textContent = unit.description;
+      listItem.appendChild(description);
+    }
     listItem.appendChild(statsRow);
 
     cellUnitList.appendChild(listItem);
   });
-};
-
-const toggleUnitPicker = (shouldOpen) => {
-  unitPicker.hidden = !shouldOpen;
-  addUnitButton.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
 };
 
 const renderSelectedCellDetails = (cell) => {
@@ -899,7 +1162,7 @@ const renderSelectedCellDetails = (cell) => {
     promptItem.textContent = "Select a cell to view or add units.";
     cellUnitList.appendChild(promptItem);
     addUnitButton.disabled = true;
-    toggleUnitPicker(false);
+    closeUnitModal();
     return;
   }
 
@@ -907,7 +1170,7 @@ const renderSelectedCellDetails = (cell) => {
   if (!coordinates) {
     selectedCellDisplay.textContent = "None";
     addUnitButton.disabled = true;
-    toggleUnitPicker(false);
+    closeUnitModal();
     return;
   }
 
@@ -927,13 +1190,11 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
 
   const activeFaction = getActiveFaction();
   if (!activeFaction || factionId !== activeFaction.id) {
-    toggleUnitPicker(false);
     return;
   }
 
   const coordinates = getCellCoordinates(selectedCell);
   if (!coordinates) {
-    toggleUnitPicker(false);
     return;
   }
 
@@ -943,7 +1204,6 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
   existingUnits.push(unitInstance);
   setUnitsForCell(row, col, existingUnits);
   renderSelectedCellDetails(selectedCell);
-  toggleUnitPicker(false);
 };
 
 const handleSelect = (cell) => {
@@ -958,7 +1218,6 @@ const handleSelect = (cell) => {
   selectedCell.focus({ preventScroll: true });
 
   renderSelectedCellDetails(cell);
-  toggleUnitPicker(false);
 };
 
 const createCell = (row, col) => {
@@ -1026,8 +1285,7 @@ addUnitButton.addEventListener("click", () => {
   if (addUnitButton.disabled) {
     return;
   }
-  const shouldOpen = unitPicker.hidden;
-  toggleUnitPicker(shouldOpen);
+  openUnitModal();
 });
 
 if (helpButton) {
@@ -1049,6 +1307,18 @@ if (helpModal) {
   helpModal.addEventListener("click", (event) => {
     if (event.target === helpModal) {
       closeHelpModal();
+    }
+  });
+}
+
+if (unitModalCloseButton) {
+  unitModalCloseButton.addEventListener("click", closeUnitModal);
+}
+
+if (unitModal) {
+  unitModal.addEventListener("click", (event) => {
+    if (event.target === unitModal) {
+      closeUnitModal();
     }
   });
 }
@@ -1084,7 +1354,18 @@ helpTabButtons.forEach((button, index) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && helpModal && helpModal.getAttribute("aria-hidden") === "false") {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (unitModal && unitModal.getAttribute("aria-hidden") === "false") {
+    event.preventDefault();
+    closeUnitModal();
+    return;
+  }
+
+  if (helpModal && helpModal.getAttribute("aria-hidden") === "false") {
+    event.preventDefault();
     closeHelpModal();
   }
 });
