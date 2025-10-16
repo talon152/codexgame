@@ -69,6 +69,48 @@
         </section>
       </aside>
     </main>
+    <div id="battle-modal" class="battle-modal" hidden aria-hidden="true">
+      <div class="battle-dialog" role="dialog" aria-modal="true" aria-labelledby="battle-title">
+        <header class="battle-header">
+          <div>
+            <p class="battle-phase-label">Combat Resolution</p>
+            <h2 id="battle-title" class="battle-title">Battle</h2>
+          </div>
+          <p id="battle-location" class="battle-location"></p>
+        </header>
+        <section class="battle-speed" aria-label="Battle speed control">
+          <label for="battle-speed-control">
+            Battle speed
+            <span id="battle-speed-value" class="battle-speed-value">1x</span>
+          </label>
+          <input
+            id="battle-speed-control"
+            type="range"
+            min="0.5"
+            max="2"
+            step="0.25"
+            value="1"
+          />
+        </section>
+        <section class="battle-field" aria-label="Battlefield overview">
+          <article class="battle-army battle-army--top">
+            <h3 id="battle-top-label" class="battle-army-label"></h3>
+            <ul id="battle-top-units" class="battle-unit-list" aria-live="polite"></ul>
+          </article>
+          <article class="battle-army battle-army--bottom">
+            <h3 id="battle-bottom-label" class="battle-army-label"></h3>
+            <ul id="battle-bottom-units" class="battle-unit-list" aria-live="polite"></ul>
+          </article>
+        </section>
+        <section class="battle-log" aria-label="Battle log">
+          <h3>Combat Log</h3>
+          <ol id="battle-log-entries" class="battle-log-entries"></ol>
+        </section>
+        <button id="battle-close" type="button" class="battle-close-button" disabled>
+          Continue
+        </button>
+      </div>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>
