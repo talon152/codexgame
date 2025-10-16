@@ -1,6 +1,6 @@
 :root {
   --grid-size: 10;
-  --cell-size: min(7vw, 60px);
+  --cell-size: clamp(30px, 8vw, 60px);
   --cell-gap: 4px;
   --primary: #1d3557;
   --primary-light: #457b9d;
@@ -23,7 +23,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
 }
 
 body.modal-open {
@@ -1416,10 +1416,84 @@ body.modal-open {
 
 @media (max-width: 900px) {
   body {
-    padding: 1rem;
+    align-items: stretch;
+    justify-content: flex-start;
   }
 
   .layout {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+    width: min(100%, 720px);
+    margin: 0 auto;
+  }
+
+  .board-panel,
+  .sidebar {
+    padding: clamp(1rem, 3vw, 1.25rem);
+  }
+
+  .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .panel-header .app-title {
+    text-align: left;
+  }
+
+  .help-button {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --cell-size: min(46px, calc((100vw - 3.5rem) / var(--grid-size)));
+    --cell-gap: 3px;
+  }
+
+  body {
+    padding: 0.75rem;
+  }
+
+  .layout {
+    gap: 1.25rem;
+  }
+
+  .board-panel,
+  .sidebar {
+    padding: clamp(0.75rem, 4vw, 1rem);
+  }
+
+  .help-button {
+    width: 100%;
+    text-align: center;
+    align-self: stretch;
+  }
+
+  .turn-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .phase-list {
+    font-size: 0.95rem;
+  }
+
+  .help-tabs {
+    flex-direction: column;
+    gap: 0.4rem;
+    border-radius: 12px;
+  }
+
+  .help-tab {
+    width: 100%;
+  }
+
+  .battle-dialog,
+  .help-dialog {
+    width: min(100vw - 1.5rem, 540px);
+    margin: 0 auto;
   }
 }
