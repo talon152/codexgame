@@ -3,6 +3,18 @@ const GRID_SIZE = 10;
 const mapGrid = document.getElementById("map-grid");
 const selectedCellDisplay = document.getElementById("selected-cell");
 
+const TERRAIN_TYPES = [
+  { name: "forest", label: "Forest", className: "terrain-forest" },
+  { name: "plain", label: "Plain", className: "terrain-plain" },
+  { name: "village", label: "Village", className: "terrain-village" },
+  { name: "mountain", label: "Mountain", className: "terrain-mountain" },
+  { name: "swamp", label: "Swamp", className: "terrain-swamp" },
+  { name: "water", label: "Water", className: "terrain-water" },
+];
+
+const getRandomTerrain = () =>
+  TERRAIN_TYPES[Math.floor(Math.random() * TERRAIN_TYPES.length)];
+
 document.documentElement.style.setProperty("--grid-size", GRID_SIZE);
 
 let selectedCell = null;
@@ -20,19 +32,26 @@ const handleSelect = (cell, row, col) => {
   selectedCell.setAttribute("aria-selected", "true");
   selectedCell.focus({ preventScroll: true });
 
-  selectedCellDisplay.textContent = formatCoordinates(row, col);
+  const terrain = cell.dataset.terrainLabel || "Unknown terrain";
+  selectedCellDisplay.textContent = `${terrain} — ${formatCoordinates(row, col)}`;
 };
 
 const createCell = (row, col) => {
   const cell = document.createElement("button");
-  cell.className = "cell";
+  const terrain = getRandomTerrain();
+  cell.className = `cell ${terrain.className}`;
   cell.type = "button";
   cell.dataset.row = row;
   cell.dataset.col = col;
+  cell.dataset.terrain = terrain.name;
+  cell.dataset.terrainLabel = terrain.label;
   cell.setAttribute("role", "gridcell");
-  cell.setAttribute("aria-label", formatCoordinates(row, col));
+  cell.setAttribute(
+    "aria-label",
+    `${terrain.label} — ${formatCoordinates(row, col)}`,
+  );
   cell.setAttribute("aria-selected", "false");
-  cell.textContent = `${row + 1},${col + 1}`;
+  cell.textContent = terrain.label;
 
   cell.addEventListener("click", () => handleSelect(cell, row, col));
   cell.addEventListener("keydown", (event) => {
