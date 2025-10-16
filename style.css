@@ -512,6 +512,11 @@ body {
   z-index: 1000;
 }
 
+.battle-modal[hidden],
+.battle-modal[aria-hidden="true"] {
+  display: none !important;
+}
+
 .battle-dialog {
   background: #fdfdfd;
   color: var(--text);
