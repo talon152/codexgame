@@ -901,6 +901,7 @@ const buildGrid = () => {
   mapGrid.appendChild(fragment);
 };
 
+closeBattleModal();
 buildGrid();
 renderPhaseList();
 updateTurnDisplay();
