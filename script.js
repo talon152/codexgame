@@ -1,3 +1,5 @@
+import { ARMIES, getArmyById } from "./data/armies/index.js";
+
 const GRID_SIZE = 10;
 
 const mapGrid = document.getElementById("map-grid");
@@ -14,6 +16,14 @@ const unitModal = document.getElementById("unit-modal");
 const unitModalList = document.getElementById("unit-modal-list");
 const unitModalCloseButton = document.getElementById("unit-modal-close");
 const unitModalFactionLabel = document.getElementById("unit-modal-faction");
+const armySelectorModal = document.getElementById("army-selector-modal");
+const armySelectorForm = document.getElementById("army-selector-form");
+const firstArmySelect = document.getElementById("first-army-select");
+const secondArmySelect = document.getElementById("second-army-select");
+const firstArmySummary = document.getElementById("first-army-summary");
+const secondArmySummary = document.getElementById("second-army-summary");
+const armySelectorStartButton = document.getElementById("army-selector-start");
+const armySelectorError = document.getElementById("army-selector-error");
 const battleModal = document.getElementById("battle-modal");
 const battleTopList = document.getElementById("battle-top-units");
 const battleBottomList = document.getElementById("battle-bottom-units");
@@ -49,153 +59,8 @@ document.documentElement.style.setProperty("--grid-size", GRID_SIZE);
 let selectedCell = null;
 let unitInstanceCounter = 0;
 let isResolvingBattles = false;
-
-const UNIT_ROSTERS = {
-  sun: [
-    {
-      id: "radiant-vanguard",
-      name: "Radiant Vanguard",
-      role: "Sanctified infantry",
-      description:
-        "Shield-bearing infantry that fortify villages to benefit from sanctuary healing.",
-      detail:
-        "The Vanguard hold the line while radiating protective wards that help allies recover between exchanges.",
-      traits: [
-        "Sanctuary Bulwark: Gain +2 DEF while occupying a village hex.",
-        "Guardian Halo: Adjacent allies recover 2 HP when the Vanguard survives a combat round.",
-      ],
-      stats: { strength: 7, attack: 6, defence: 5, hp: 18, initiative: 6 },
-    },
-    {
-      id: "dawnblade-cavalry",
-      name: "Dawnblade Cavalry",
-      role: "Shock cavalry",
-      description:
-        "Lightning-quick riders that excel on plains but lose momentum scaling mountains.",
-      detail:
-        "Dawnblade outriders focus on flanking strikes that disrupt the enemy line before withdrawing to safety.",
-      traits: [
-        "Skirmish Dash: May move after attacking if starting from a plain hex.",
-        "Momentum Drop: Strength reduced by 2 when ending movement on a mountain hex.",
-      ],
-      stats: { strength: 6, attack: 8, defence: 4, hp: 16, initiative: 8 },
-    },
-    {
-      id: "luminar-arcanist",
-      name: "Luminar Arcanist",
-      role: "Ranged battlemage",
-      description:
-        "Radiant bolts cut through swamp mists to negate attack penalties for allied casters.",
-      detail:
-        "The arcanists specialise in burning away cover, softening entrenched foes before the infantry advance.",
-      traits: [
-        "Piercing Flare: Ignore the swamp attack penalty when casting from range.",
-        "Beacon Sigil: Marked targets grant +1 ATK to subsequent magical attacks this round.",
-      ],
-      stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7 },
-    },
-    {
-      id: "aegis-sentinels",
-      name: "Aegis Sentinels",
-      role: "Phalanx guardians",
-      description:
-        "Armoured wardens that anchor forest approaches, leveraging the defensive bonus to hold the line.",
-      detail:
-        "Sentinels form immovable bulwarks that slow enemy assaults while ranged allies pick them apart.",
-      traits: [
-        "Verdant Bastion: Gain +1 DEF from forest terrain bonuses (total +2).",
-        "Stalwart Advance: Cannot be forced to retreat by morale checks.",
-      ],
-      stats: { strength: 8, attack: 5, defence: 7, hp: 20, initiative: 4 },
-    },
-    {
-      id: "solar-skirmisher",
-      name: "Solar Skirmisher",
-      role: "Forward scout",
-      description:
-        "Flexible outrider who scouts villages and forests before a major advance.",
-      detail:
-        "Skirmishers screen the army, striking opportunistically and relaying enemy movements back to command.",
-      traits: [
-        "Trailblazer: Reveals hidden enemy stacks in adjacent forest hexes.",
-        "Supply Cache: When ending in a village, restore 1 spent tactic card.",
-      ],
-      stats: { strength: 6, attack: 6, defence: 4, hp: 15, initiative: 7 },
-    },
-  ],
-  moon: [
-    {
-      id: "twilight-assassins",
-      name: "Twilight Assassins",
-      role: "Stealth operatives",
-      description:
-        "Shadowy blades that bypass village sentries during nightfall strikes.",
-      detail:
-        "Assassins pick apart isolated targets, spreading fear through the enemy line before open battle begins.",
-      traits: [
-        "Veiled Approach: Ignore zone-of-control when moving through village hexes at night.",
-        "Deathmark: First strike each battle deals +2 ATK if the target acted this phase.",
-      ],
-      stats: { strength: 7, attack: 9, defence: 4, hp: 14, initiative: 9 },
-    },
-    {
-      id: "umbral-wardens",
-      name: "Umbral Wardens",
-      role: "Bulwark defenders",
-      description:
-        "Obsidian guardians who thrive in forests, turning terrain bonuses into impenetrable cover.",
-      detail:
-        "Wardens entrench themselves to channel moonlit barriers that blunt even the fiercest charges.",
-      traits: [
-        "Nightroot Aegis: Forest hexes grant +2 DEF instead of +1.",
-        "Ward of Stillness: Enemy cavalry entering the wardens' hex lose 1 movement next round.",
-      ],
-      stats: { strength: 6, attack: 5, defence: 8, hp: 19, initiative: 5 },
-    },
-    {
-      id: "lunar-sages",
-      name: "Lunar Sages",
-      role: "Support casters",
-      description:
-        "Diviners whose tidal rites let amphibious allies launch assaults from water hexes.",
-      detail:
-        "Sages manipulate tides and moonlight to reposition allies while flooding enemies with debilitating hexes.",
-      traits: [
-        "Tidal Bridge: Amphibious allies ignore water movement restrictions when adjacent to the sages.",
-        "Moonward Pulse: Heal 3 HP on one ally that starts the phase on water.",
-      ],
-      stats: { strength: 5, attack: 7, defence: 5, hp: 16, initiative: 6 },
-    },
-    {
-      id: "nightglide-riders",
-      name: "Nightglide Riders",
-      role: "Flying cavalry",
-      description:
-        "Glide over swamps to strike without suffering movement loss or attack penalties.",
-      detail:
-        "Riders loop in crescent patterns, harrying foes while scouting behind enemy lines for weak points.",
-      traits: [
-        "Swamp Skip: Ignore swamp movement penalties and attack penalties.",
-        "Sky Harriers: Gain +1 INIT when beginning combat from a higher elevation hex such as mountains.",
-      ],
-      stats: { strength: 6, attack: 8, defence: 5, hp: 17, initiative: 8 },
-    },
-    {
-      id: "veilbreakers",
-      name: "Veilbreakers",
-      role: "Siege breakers",
-      description:
-        "Siege specialists who batter mountain holds despite the cramped elevation.",
-      detail:
-        "Veilbreakers dismantle fortifications with seismic crescents that shatter rockbound defenses.",
-      traits: [
-        "Resonant Shatter: Ignore the strength cap imposed on cavalry in mountain hexes.",
-        "Fracture Wave: First successful hit reduces target DEF by 1 for the battle.",
-      ],
-      stats: { strength: 8, attack: 7, defence: 6, hp: 18, initiative: 6 },
-    },
-  ],
-};
+let factions = [];
+const unitRosters = new Map();
 
 const UNIT_STAT_LABELS = [
   { key: "strength", label: "STR" },
@@ -203,19 +68,6 @@ const UNIT_STAT_LABELS = [
   { key: "defence", label: "DEF" },
   { key: "hp", label: "HP" },
   { key: "initiative", label: "INIT" },
-];
-
-const FACTIONS = [
-  {
-    id: "sun",
-    name: "Sun Dominion",
-    summary: "Radiant tacticians focused on swift expansion.",
-  },
-  {
-    id: "moon",
-    name: "Moon Covenant",
-    summary: "Patient mystics preparing calculated strikes.",
-  },
 ];
 
 const TURN_PHASES = [
@@ -275,24 +127,54 @@ const updatePhaseDisplay = () => {
 };
 
 const updateFactionDisplay = () => {
-  const faction = FACTIONS[turnState.currentFactionIndex];
+  if (!currentFactionDisplay) {
+    return;
+  }
+
+  const faction = factions[turnState.currentFactionIndex];
+
+  if (!faction) {
+    currentFactionDisplay.textContent = "Awaiting army selection";
+    currentFactionDisplay.className = "faction-badge";
+    currentFactionDisplay.removeAttribute("title");
+    if (turnCounterDisplay) {
+      turnCounterDisplay.textContent = "";
+    }
+    return;
+  }
+
   currentFactionDisplay.textContent = faction.name;
   currentFactionDisplay.className = `faction-badge faction-${faction.id}`;
-  currentFactionDisplay.setAttribute("title", faction.summary);
-  turnCounterDisplay.textContent = `Turn ${turnState.turnNumber}`;
+  currentFactionDisplay.setAttribute("title", faction.summary ?? "");
+  if (turnCounterDisplay) {
+    turnCounterDisplay.textContent = `Turn ${turnState.turnNumber}`;
+  }
 };
 
 const updateAdvanceButton = () => {
+  if (!advancePhaseButton) {
+    return;
+  }
+
+  const hasFactions = factions.length > 0;
   const isLastPhase =
     turnState.currentPhaseIndex === TURN_PHASES.length - 1;
-  advancePhaseButton.textContent = isLastPhase ? "End Turn" : "Next Phase";
+  const nextLabel = isLastPhase ? "End Turn" : "Next Phase";
+  const nextAriaLabel = isLastPhase
+    ? "End the current turn"
+    : "Advance to the next phase";
+
+  advancePhaseButton.textContent = nextLabel;
   advancePhaseButton.setAttribute(
     "aria-label",
-    isLastPhase ? "End the current turn" : "Advance to the next phase",
+    hasFactions ? nextAriaLabel : "Select armies to begin the round",
   );
+
+  const shouldDisable = !hasFactions || isResolvingBattles;
+  advancePhaseButton.disabled = shouldDisable;
 };
 
-const getActiveFaction = () => FACTIONS[turnState.currentFactionIndex] ?? null;
+const getActiveFaction = () => factions[turnState.currentFactionIndex] ?? null;
 
 const createUnitStatsRow = (stats) => {
   const statsRow = document.createElement("span");
@@ -334,7 +216,7 @@ const renderUnitModalOptions = () => {
     return null;
   }
 
-  const units = UNIT_ROSTERS[activeFaction.id] ?? [];
+  const units = unitRosters.get(activeFaction.id) ?? [];
 
   if (units.length === 0) {
     const emptyMessage = document.createElement("li");
@@ -451,10 +333,166 @@ const renderUnitModalOptions = () => {
       listItem.append(selectButton);
     }
 
-    unitModalList.appendChild(listItem);
+  unitModalList.appendChild(listItem);
   });
 
   return firstButton;
+};
+
+let hasInitialisedArmySelector = false;
+
+const resetBoardState = () => {
+  boardUnits.clear();
+
+  if (!mapGrid) {
+    return;
+  }
+
+  mapGrid.querySelectorAll(".cell-unit-stack").forEach((stack) => {
+    stack.textContent = "";
+    delete stack.dataset.count;
+  });
+};
+
+const updateArmySummaryText = (summaryElement, armyId) => {
+  if (!summaryElement) {
+    return;
+  }
+
+  const army = getArmyById(armyId);
+
+  if (army) {
+    summaryElement.textContent = army.faction.summary ?? "";
+    summaryElement.classList.remove("is-empty");
+  } else {
+    summaryElement.textContent = "";
+    summaryElement.classList.add("is-empty");
+  }
+};
+
+const updateArmySelectorState = ({ forceShowMissing = false } = {}) => {
+  const firstId = firstArmySelect?.value ?? "";
+  const secondId = secondArmySelect?.value ?? "";
+
+  updateArmySummaryText(firstArmySummary, firstId);
+  updateArmySummaryText(secondArmySummary, secondId);
+
+  let errorMessage = "";
+  const hasFirstSelection = Boolean(firstId);
+  const hasSecondSelection = Boolean(secondId);
+  const selectionsReady = hasFirstSelection && hasSecondSelection;
+  const hasDuplicateSelection = selectionsReady && firstId === secondId;
+
+  if (!selectionsReady) {
+    if (forceShowMissing) {
+      errorMessage = "Select an army for each side.";
+    }
+  } else if (hasDuplicateSelection) {
+    errorMessage = "Choose two different armies.";
+  }
+
+  if (armySelectorError) {
+    armySelectorError.textContent = errorMessage;
+    armySelectorError.hidden = errorMessage.length === 0;
+  }
+
+  if (armySelectorStartButton) {
+    const shouldDisable = !selectionsReady || hasDuplicateSelection;
+    armySelectorStartButton.disabled = shouldDisable;
+  }
+};
+
+const populateArmySelectorOptions = () => {
+  if (hasInitialisedArmySelector) {
+    return;
+  }
+
+  const populateSelect = (selectElement) => {
+    if (!selectElement) {
+      return;
+    }
+
+    selectElement.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select an army";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    selectElement.appendChild(placeholder);
+
+    ARMIES.forEach((army) => {
+      const option = document.createElement("option");
+      option.value = army.faction.id;
+      option.textContent = army.faction.name;
+      selectElement.appendChild(option);
+    });
+  };
+
+  populateSelect(firstArmySelect);
+  populateSelect(secondArmySelect);
+
+  hasInitialisedArmySelector = true;
+};
+
+const openArmySelector = ({ focusSelect = false } = {}) => {
+  if (!armySelectorModal) {
+    return;
+  }
+
+  populateArmySelectorOptions();
+  updateArmySelectorState();
+
+  armySelectorModal.hidden = false;
+  armySelectorModal.setAttribute("aria-hidden", "false");
+  syncBodyModalState();
+
+  if (focusSelect && firstArmySelect) {
+    firstArmySelect.focus({ preventScroll: true });
+  }
+};
+
+const closeArmySelector = () => {
+  if (!armySelectorModal) {
+    return;
+  }
+
+  armySelectorModal.hidden = true;
+  armySelectorModal.setAttribute("aria-hidden", "true");
+  syncBodyModalState();
+
+  if (advancePhaseButton && document.contains(advancePhaseButton)) {
+    advancePhaseButton.focus({ preventScroll: true });
+  }
+};
+
+const applyArmySelection = (armyIds) => {
+  const selectedArmies = armyIds
+    .map((id) => getArmyById(id))
+    .filter((army) => Boolean(army));
+
+  factions = selectedArmies.map((army) => army.faction);
+  unitRosters.clear();
+
+  selectedArmies.forEach((army) => {
+    unitRosters.set(army.faction.id, Array.isArray(army.roster) ? army.roster : []);
+  });
+
+  turnState.turnNumber = 1;
+  turnState.currentFactionIndex = 0;
+  turnState.currentPhaseIndex = 0;
+  unitInstanceCounter = 0;
+  resetBoardState();
+  closeUnitModal();
+
+  if (selectedCell) {
+    selectedCell.classList.remove("selected");
+    selectedCell.setAttribute("aria-selected", "false");
+  }
+
+  selectedCell = null;
+  renderSelectedCellDetails(null);
+  updateTurnDisplay();
 };
 
 const updateTurnDisplay = () => {
@@ -468,6 +506,11 @@ const advancePhase = async () => {
     return;
   }
 
+  if (factions.length === 0) {
+    openArmySelector({ focusSelect: true });
+    return;
+  }
+
   if (turnState.currentPhaseIndex < TURN_PHASES.length - 1) {
     turnState.currentPhaseIndex += 1;
     updateTurnDisplay();
@@ -475,6 +518,7 @@ const advancePhase = async () => {
   }
 
   isResolvingBattles = true;
+  updateAdvanceButton();
 
   if (advancePhaseButton) {
     advancePhaseButton.disabled = true;
@@ -500,7 +544,7 @@ const advancePhase = async () => {
 
   turnState.currentPhaseIndex = 0;
   turnState.currentFactionIndex =
-    (turnState.currentFactionIndex + 1) % FACTIONS.length;
+    (turnState.currentFactionIndex + 1) % factions.length;
   turnState.turnNumber += 1;
 
   updateTurnDisplay();
@@ -508,7 +552,7 @@ const advancePhase = async () => {
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
 
-const getFactionById = (id) => FACTIONS.find((faction) => faction.id === id);
+const getFactionById = (id) => factions.find((faction) => faction.id === id);
 
 const getCellKey = (row, col) => `${row}-${col}`;
 
@@ -558,7 +602,8 @@ const syncBodyModalState = () => {
   if (
     isModalVisible(helpModal) ||
     isModalVisible(battleModal) ||
-    isModalVisible(unitModal)
+    isModalVisible(unitModal) ||
+    isModalVisible(armySelectorModal)
   ) {
     document.body.classList.add("modal-open");
   } else {
@@ -1177,7 +1222,11 @@ const renderSelectedCellDetails = (cell) => {
   const { row, col } = coordinates;
   const terrain = cell.dataset.terrainLabel || "Unknown terrain";
   selectedCellDisplay.textContent = `${terrain} — ${formatCoordinates(row, col)}`;
-  addUnitButton.disabled = false;
+  const hasActiveFaction = Boolean(getActiveFaction());
+  addUnitButton.disabled = !hasActiveFaction;
+  if (!hasActiveFaction) {
+    closeUnitModal();
+  }
   const units = getUnitsForCell(row, col);
   updateCellUnitStack(cell, units);
   renderCellUnitList(row, col);
@@ -1274,6 +1323,7 @@ buildGrid();
 renderPhaseList();
 updateTurnDisplay();
 renderSelectedCellDetails(null);
+openArmySelector({ focusSelect: true });
 
 if (battleSpeedControl) {
   battleSpeedControl.addEventListener("input", updateBattleSpeedDisplay);
@@ -1323,6 +1373,31 @@ if (unitModal) {
   });
 }
 
+if (armySelectorForm) {
+  armySelectorForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const firstId = firstArmySelect?.value ?? "";
+    const secondId = secondArmySelect?.value ?? "";
+
+    if (!firstId || !secondId || firstId === secondId) {
+      updateArmySelectorState({ forceShowMissing: true });
+      return;
+    }
+
+    applyArmySelection([firstId, secondId]);
+    closeArmySelector();
+  });
+}
+
+if (firstArmySelect) {
+  firstArmySelect.addEventListener("change", () => updateArmySelectorState());
+}
+
+if (secondArmySelect) {
+  secondArmySelect.addEventListener("change", () => updateArmySelectorState());
+}
+
 helpTabButtons.forEach((button, index) => {
   button.addEventListener("click", () => {
     setActiveHelpTab(button.dataset.helpTab);
@@ -1355,6 +1430,11 @@ helpTabButtons.forEach((button, index) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") {
+    return;
+  }
+
+  if (armySelectorModal && armySelectorModal.getAttribute("aria-hidden") === "false") {
+    event.preventDefault();
     return;
   }
 

@@ -291,6 +291,67 @@
         </section>
       </div>
     </div>
+    <div
+      id="army-selector-modal"
+      class="army-selector-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div
+        class="army-selector-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="army-selector-title"
+      >
+        <header class="army-selector-header">
+          <h2 id="army-selector-title" class="army-selector-title">
+            Choose Your Armies
+          </h2>
+          <p class="army-selector-intro">
+            Select which forces will contest this scenario before the first turn
+            begins.
+          </p>
+        </header>
+        <form id="army-selector-form" class="army-selector-form">
+          <div class="army-selector-field">
+            <label for="first-army-select">First Army</label>
+            <select id="first-army-select" name="firstArmy" required></select>
+            <p
+              id="first-army-summary"
+              class="army-selector-summary is-empty"
+              aria-live="polite"
+            ></p>
+          </div>
+          <div class="army-selector-field">
+            <label for="second-army-select">Second Army</label>
+            <select
+              id="second-army-select"
+              name="secondArmy"
+              required
+            ></select>
+            <p
+              id="second-army-summary"
+              class="army-selector-summary is-empty"
+              aria-live="polite"
+            ></p>
+          </div>
+          <p
+            id="army-selector-error"
+            class="army-selector-error"
+            role="alert"
+            hidden
+          ></p>
+          <button
+            id="army-selector-start"
+            type="submit"
+            class="army-selector-start"
+            disabled
+          >
+            Begin Scenario
+          </button>
+        </form>
+      </div>
+    </div>
     <div id="unit-modal" class="unit-modal" hidden aria-hidden="true">
       <div
         class="unit-dialog"
@@ -319,6 +380,6 @@
         <ul id="unit-modal-list" class="unit-modal-list" role="list"></ul>
       </div>
     </div>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>
