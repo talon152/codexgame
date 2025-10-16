@@ -11,6 +11,7 @@ const phaseSummaryDisplay = document.getElementById("phase-summary");
 const phaseListElement = document.getElementById("phase-list");
 const advancePhaseButton = document.getElementById("advance-phase");
 const cellUnitList = document.getElementById("cell-unit-list");
+const cellResourceList = document.getElementById("cell-resource-list");
 const addUnitButton = document.getElementById("add-unit-button");
 const unitModal = document.getElementById("unit-modal");
 const unitModalList = document.getElementById("unit-modal-list");
@@ -51,6 +52,38 @@ const TERRAIN_TYPES = [
   { name: "water", label: "Water", className: "terrain-water" },
 ];
 
+const TERRAIN_RESOURCE_RULES = {
+  forest: {
+    gold: { min: 1, max: 2 },
+    metal: { min: 1, max: 2 },
+  },
+  plain: {
+    gold: { min: 2, max: 4 },
+    metal: { min: 0, max: 1 },
+  },
+  village: {
+    gold: { min: 3, max: 5 },
+    metal: { min: 1, max: 2 },
+  },
+  mountain: {
+    gold: { min: 0, max: 1 },
+    metal: { min: 3, max: 5 },
+  },
+  swamp: {
+    gold: { min: 1, max: 3 },
+    metal: { min: 0, max: 1 },
+  },
+  water: {
+    gold: { min: 1, max: 2 },
+    metal: { min: 0, max: 0 },
+  },
+};
+
+const RESOURCE_TYPES = [
+  { key: "gold", label: "Gold" },
+  { key: "metal", label: "Metal" },
+];
+
 const getRandomTerrain = () =>
   TERRAIN_TYPES[Math.floor(Math.random() * TERRAIN_TYPES.length)];
 
@@ -69,6 +102,26 @@ const UNIT_STAT_LABELS = [
   { key: "hp", label: "HP" },
   { key: "initiative", label: "INIT" },
 ];
+
+const getResourceDefinition = (key) =>
+  RESOURCE_TYPES.find((resource) => resource.key === key);
+
+const randomIntInclusive = (min, max) => {
+  const lower = Math.ceil(Math.min(min, max));
+  const upper = Math.floor(Math.max(min, max));
+  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+};
+
+const rollResourcesForTerrain = (terrainName) => {
+  const rules = TERRAIN_RESOURCE_RULES[terrainName] ?? {};
+  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
+    const range = rules[key] ?? { min: 0, max: 0 };
+    return {
+      ...accumulator,
+      [key]: randomIntInclusive(range.min ?? 0, range.max ?? 0),
+    };
+  }, {});
+};
 
 const TURN_PHASES = [
   {
@@ -205,6 +258,47 @@ const createUnitStatsRow = (stats) => {
   return statsRow;
 };
 
+const createResourceBadge = (resourceKey, quantity, {
+  badgeClass = "unit-cost__badge",
+  elementTag = "span",
+  formatText = ({ label, value }) => `${label}: ${value}`,
+} = {}) => {
+  const definition = getResourceDefinition(resourceKey);
+  const badge = document.createElement(elementTag);
+  badge.className = badgeClass;
+  badge.dataset.resource = resourceKey;
+  const label = definition?.label ?? resourceKey;
+  badge.textContent = formatText({ label, value: quantity, key: resourceKey });
+  return badge;
+};
+
+const createCostBadges = (cost) => {
+  const costRow = document.createElement("span");
+  costRow.className = "unit-cost";
+
+  const entries = Object.entries(cost ?? {}).filter(
+    ([, amount]) => typeof amount === "number" && amount > 0,
+  );
+
+  if (entries.length === 0) {
+    const noCost = document.createElement("span");
+    noCost.className = "unit-cost__badge";
+    noCost.textContent = "No cost";
+    costRow.appendChild(noCost);
+    return costRow;
+  }
+
+  entries.forEach(([resourceKey, amount]) => {
+    costRow.appendChild(
+      createResourceBadge(resourceKey, amount, {
+        badgeClass: "unit-cost__badge",
+      }),
+    );
+  });
+
+  return costRow;
+};
+
 const renderUnitModalOptions = () => {
   if (!unitModalList) {
     return null;
@@ -265,11 +359,12 @@ const renderUnitModalOptions = () => {
     }
 
     const statsRow = createUnitStatsRow(unit.stats);
+    const costRow = createCostBadges(unit.cost);
     const description = document.createElement("span");
     description.className = "unit-description";
     description.textContent = unit.description ?? "";
 
-    selectButton.append(summaryRow, statsRow, description);
+    selectButton.append(summaryRow, costRow, statsRow, description);
     selectButton.addEventListener("click", () => {
       handleAddUnitToSelectedCell(activeFaction.id, unit);
       closeUnitModal();
@@ -1218,6 +1313,7 @@ const createUnitInstance = (factionId, template) => ({
   traits: Array.isArray(template.traits) ? [...template.traits] : [],
   maxHp: typeof template.stats?.hp === "number" ? template.stats.hp : null,
   stats: { ...template.stats },
+  cost: { ...template.cost },
 });
 
 const updateCellUnitStack = (cell, units) => {
@@ -1235,6 +1331,56 @@ const updateCellUnitStack = (cell, units) => {
   }
 };
 
+const getResourcesForCellElement = (cell) => {
+  if (!cell) {
+    return {};
+  }
+
+  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
+    const value = Number.parseInt(cell.dataset?.[key] ?? "0", 10);
+    if (!Number.isNaN(value) && value > 0) {
+      return { ...accumulator, [key]: value };
+    }
+    return accumulator;
+  }, {});
+};
+
+const renderCellResourceList = (cell) => {
+  if (!cellResourceList) {
+    return;
+  }
+
+  cellResourceList.innerHTML = "";
+  if (!cell) {
+    const prompt = document.createElement("li");
+    prompt.className = "resource-item";
+    prompt.textContent = "Select a cell to view resources.";
+    cellResourceList.appendChild(prompt);
+    return;
+  }
+
+  const resources = getResourcesForCellElement(cell);
+  const entries = Object.entries(resources);
+
+  if (entries.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "resource-item";
+    empty.textContent = "No resources";
+    cellResourceList.appendChild(empty);
+    return;
+  }
+
+  entries.forEach(([key, amount]) => {
+    cellResourceList.appendChild(
+      createResourceBadge(key, amount, {
+        badgeClass: "resource-item",
+        elementTag: "li",
+        formatText: ({ label, value }) => `${value} ${label}`,
+      }),
+    );
+  });
+};
+
 const renderCellUnitList = (row, col) => {
   cellUnitList.innerHTML = "";
   const units = getUnitsForCell(row, col);
@@ -1247,35 +1393,61 @@ const renderCellUnitList = (row, col) => {
     return;
   }
 
-  units.forEach((unit) => {
+  const grouped = units.reduce((accumulator, unit) => {
+    const key = `${unit.templateId}-${unit.factionId}`;
+    const existing = accumulator.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      accumulator.set(key, { unit, count: 1 });
+    }
+    return accumulator;
+  }, new Map());
+
+  grouped.forEach(({ unit, count }) => {
     const faction = getFactionById(unit.factionId);
     const listItem = document.createElement("li");
+    listItem.className = "unit-card";
 
-    const factionLabel = document.createElement("span");
-    factionLabel.className = "unit-meta";
-    factionLabel.textContent = faction ? faction.name : unit.factionId;
+    const header = document.createElement("div");
+    header.className = "unit-card__header";
 
     const nameLabel = document.createElement("span");
     nameLabel.className = "unit-name";
     nameLabel.textContent = unit.name;
 
-    const statsRow = createUnitStatsRow(unit.stats);
+    const quantityBadge = document.createElement("span");
+    quantityBadge.className = "unit-quantity";
+    quantityBadge.textContent = `×${count}`;
 
-    listItem.appendChild(nameLabel);
+    header.append(nameLabel, quantityBadge);
+    listItem.appendChild(header);
+
     if (unit.role) {
       const roleLabel = document.createElement("span");
       roleLabel.className = "unit-role";
       roleLabel.textContent = unit.role;
       listItem.appendChild(roleLabel);
     }
+
+    const factionLabel = document.createElement("span");
+    factionLabel.className = "unit-meta";
+    factionLabel.textContent = faction ? faction.name : unit.factionId;
     listItem.appendChild(factionLabel);
+
+    const statsRow = createUnitStatsRow(unit.stats);
+    listItem.appendChild(statsRow);
+
+    if (unit.cost) {
+      listItem.appendChild(createCostBadges(unit.cost));
+    }
+
     if (unit.description) {
       const description = document.createElement("span");
       description.className = "unit-description";
       description.textContent = unit.description;
       listItem.appendChild(description);
     }
-    listItem.appendChild(statsRow);
 
     cellUnitList.appendChild(listItem);
   });
@@ -1284,6 +1456,7 @@ const renderCellUnitList = (row, col) => {
 const renderSelectedCellDetails = (cell) => {
   if (!cell) {
     selectedCellDisplay.textContent = "None";
+    renderCellResourceList(null);
     cellUnitList.innerHTML = "";
     const promptItem = document.createElement("li");
     promptItem.className = "unit-empty";
@@ -1297,6 +1470,7 @@ const renderSelectedCellDetails = (cell) => {
   const coordinates = getCellCoordinates(cell);
   if (!coordinates) {
     selectedCellDisplay.textContent = "None";
+    renderCellResourceList(null);
     addUnitButton.disabled = true;
     closeUnitModal();
     return;
@@ -1312,6 +1486,7 @@ const renderSelectedCellDetails = (cell) => {
     closeUnitModal();
   }
   const units = getUnitsForCell(row, col);
+  renderCellResourceList(cell);
   updateCellUnitStack(cell, units);
   renderCellUnitList(row, col);
 };
@@ -1362,6 +1537,15 @@ const createCell = (row, col) => {
   cell.dataset.col = col.toString();
   cell.dataset.terrain = terrain.name;
   cell.dataset.terrainLabel = terrain.label;
+
+  const resources = rollResourcesForTerrain(terrain.name);
+  RESOURCE_TYPES.forEach(({ key }) => {
+    const amount = resources[key] ?? 0;
+    if (amount > 0) {
+      cell.dataset[key] = amount.toString();
+    }
+  });
+
   cell.setAttribute("role", "gridcell");
   cell.setAttribute(
     "aria-label",
@@ -1377,7 +1561,25 @@ const createCell = (row, col) => {
   unitStack.className = "cell-unit-stack";
   unitStack.setAttribute("aria-hidden", "true");
 
+  const resourceBadges = document.createElement("div");
+  resourceBadges.className = "cell-resources";
+
+  RESOURCE_TYPES.forEach(({ key }) => {
+    const amount = resources[key] ?? 0;
+    if (amount > 0) {
+      resourceBadges.appendChild(
+        createResourceBadge(key, amount, {
+          badgeClass: "cell-resource-badge",
+          formatText: ({ value, label }) => `${label[0]}${value}`,
+        }),
+      );
+    }
+  });
+
   cell.append(terrainLabel, unitStack);
+  if (resourceBadges.childElementCount > 0) {
+    cell.append(resourceBadges);
+  }
 
   cell.addEventListener("click", () => handleSelect(cell));
   cell.addEventListener("keydown", (event) => {

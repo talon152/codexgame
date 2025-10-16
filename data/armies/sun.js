@@ -18,6 +18,7 @@ export const sunArmy = {
         "Ward-Hardened: A hearty 18 HP lets them anchor the Sun Dominion battle line for extended fights.",
       ],
       stats: { strength: 7, attack: 6, defence: 5, hp: 18, initiative: 6 },
+      cost: { gold: 2, metal: 1 },
     },
     {
       id: "dawnblade-cavalry",
@@ -32,6 +33,7 @@ export const sunArmy = {
         "Blazing Tempo: Initiative 8 often puts them ahead of slower foes each combat round.",
       ],
       stats: { strength: 6, attack: 8, defence: 4, hp: 16, initiative: 8 },
+      cost: { gold: 3, metal: 1 },
     },
     {
       id: "luminar-arcanist",
@@ -46,6 +48,7 @@ export const sunArmy = {
         "Fragile Channel: With only 14 HP they rely on allies to keep them safe once engaged.",
       ],
       stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7 },
+      cost: { gold: 2, metal: 2 },
     },
     {
       id: "aegis-sentinels",
@@ -60,6 +63,7 @@ export const sunArmy = {
         "Bulwark Endurance: 20 HP lets them soak punishment longer than other Sun units.",
       ],
       stats: { strength: 8, attack: 5, defence: 7, hp: 20, initiative: 4 },
+      cost: { gold: 1, metal: 3 },
     },
     {
       id: "solar-skirmisher",
@@ -74,6 +78,7 @@ export const sunArmy = {
         "Adaptive Patrol: Moderate 15 HP lets them skirmish without immediately folding under pressure.",
       ],
       stats: { strength: 6, attack: 6, defence: 4, hp: 15, initiative: 7 },
+      cost: { gold: 1, metal: 1 },
     },
   ],
 };
