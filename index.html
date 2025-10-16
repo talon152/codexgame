@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codex Strategy Prototype</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="board-panel" aria-label="Game board">
+        <h1 class="app-title">Codex Strategy Prototype</h1>
+        <div id="map-grid" class="map-grid" role="grid" aria-labelledby="grid-caption"></div>
+        <p id="grid-caption" class="sr-only">Select a cell to view its coordinates.</p>
+      </section>
+      <aside class="sidebar" aria-live="polite">
+        <h2>Selected Cell</h2>
+        <p id="selected-cell">None</p>
+      </aside>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
