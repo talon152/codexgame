@@ -88,6 +88,14 @@ const TURN_PHASES = [
   },
 ];
 
+const PHASE_INDEX = TURN_PHASES.reduce((accumulator, phase, index) => {
+  return { ...accumulator, [phase.id]: index };
+}, {});
+
+const START_PHASE_INDEX = PHASE_INDEX.start ?? 0;
+const MAIN_PHASE_INDEX = PHASE_INDEX.main ?? 0;
+const END_PHASE_INDEX = PHASE_INDEX.end ?? TURN_PHASES.length - 1;
+
 const turnState = {
   turnNumber: 1,
   currentFactionIndex: 0,
@@ -151,26 +159,30 @@ const updateFactionDisplay = () => {
   }
 };
 
+const isMainPhaseActive = () => turnState.currentPhaseIndex === MAIN_PHASE_INDEX;
+
 const updateAdvanceButton = () => {
   if (!advancePhaseButton) {
     return;
   }
 
   const hasFactions = factions.length > 0;
-  const isLastPhase =
-    turnState.currentPhaseIndex === TURN_PHASES.length - 1;
-  const nextLabel = isLastPhase ? "End Turn" : "Next Phase";
-  const nextAriaLabel = isLastPhase
-    ? "End the current turn"
-    : "Advance to the next phase";
+  const mainPhaseActive = isMainPhaseActive();
+  const buttonLabel = hasFactions ? "End Turn" : "Select Armies";
+  const buttonAriaLabel = hasFactions
+    ? mainPhaseActive
+      ? "End the current turn"
+      : "Start and end phases resolve automatically"
+    : "Select armies to begin the round";
 
-  advancePhaseButton.textContent = nextLabel;
+  advancePhaseButton.textContent = buttonLabel;
   advancePhaseButton.setAttribute(
     "aria-label",
-    hasFactions ? nextAriaLabel : "Select armies to begin the round",
+    buttonAriaLabel,
   );
 
-  const shouldDisable = !hasFactions || isResolvingBattles;
+  const shouldDisable =
+    !hasFactions || isResolvingBattles || !mainPhaseActive;
   advancePhaseButton.disabled = shouldDisable;
 };
 
@@ -492,13 +504,27 @@ const applyArmySelection = (armyIds) => {
 
   selectedCell = null;
   renderSelectedCellDetails(null);
-  updateTurnDisplay();
+  runStartPhase();
 };
 
 const updateTurnDisplay = () => {
   updateFactionDisplay();
   updatePhaseDisplay();
   updateAdvanceButton();
+  renderSelectedCellDetails(selectedCell);
+};
+
+const runStartPhase = () => {
+  if (factions.length === 0) {
+    updateTurnDisplay();
+    return;
+  }
+
+  turnState.currentPhaseIndex = START_PHASE_INDEX;
+  updateTurnDisplay();
+
+  turnState.currentPhaseIndex = MAIN_PHASE_INDEX;
+  updateTurnDisplay();
 };
 
 const advancePhase = async () => {
@@ -511,14 +537,15 @@ const advancePhase = async () => {
     return;
   }
 
-  if (turnState.currentPhaseIndex < TURN_PHASES.length - 1) {
-    turnState.currentPhaseIndex += 1;
-    updateTurnDisplay();
+  if (!isMainPhaseActive()) {
     return;
   }
 
   isResolvingBattles = true;
   updateAdvanceButton();
+
+  turnState.currentPhaseIndex = END_PHASE_INDEX;
+  updateTurnDisplay();
 
   if (advancePhaseButton) {
     advancePhaseButton.disabled = true;
@@ -542,12 +569,12 @@ const advancePhase = async () => {
     }
   }
 
-  turnState.currentPhaseIndex = 0;
+  turnState.currentPhaseIndex = START_PHASE_INDEX;
   turnState.currentFactionIndex =
     (turnState.currentFactionIndex + 1) % factions.length;
   turnState.turnNumber += 1;
 
-  updateTurnDisplay();
+  runStartPhase();
 };
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
@@ -1223,8 +1250,9 @@ const renderSelectedCellDetails = (cell) => {
   const terrain = cell.dataset.terrainLabel || "Unknown terrain";
   selectedCellDisplay.textContent = `${terrain} — ${formatCoordinates(row, col)}`;
   const hasActiveFaction = Boolean(getActiveFaction());
-  addUnitButton.disabled = !hasActiveFaction;
-  if (!hasActiveFaction) {
+  const canInteract = hasActiveFaction && isMainPhaseActive();
+  addUnitButton.disabled = !canInteract;
+  if (!canInteract) {
     closeUnitModal();
   }
   const units = getUnitsForCell(row, col);
