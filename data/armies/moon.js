@@ -14,8 +14,8 @@ export const moonArmy = {
       detail:
         "Assassins pick apart isolated targets, spreading fear through the enemy line before open battle begins.",
       traits: [
-        "Veiled Approach: Ignore zone-of-control when moving through village hexes at night.",
-        "Deathmark: First strike each battle deals +2 ATK if the target acted this phase.",
+        "Nightfall Blades: 9 ATK lets their first swings hit with lethal precision.",
+        "Shadow Step: Initiative 9 helps them act before most opponents can respond.",
       ],
       stats: { strength: 7, attack: 9, defence: 4, hp: 14, initiative: 9 },
     },
@@ -28,8 +28,8 @@ export const moonArmy = {
       detail:
         "Wardens entrench themselves to channel moonlit barriers that blunt even the fiercest charges.",
       traits: [
-        "Nightroot Aegis: Forest hexes grant +2 DEF instead of +1.",
-        "Ward of Stillness: Enemy cavalry entering the wardens' hex lose 1 movement next round.",
+        "Obsidian Bulwark: 8 DEF shrugs off the majority of counterstrikes.",
+        "Moonlit Resolve: Their sturdy 19 HP keeps them entrenched through long battles.",
       ],
       stats: { strength: 6, attack: 5, defence: 8, hp: 19, initiative: 5 },
     },
@@ -42,8 +42,8 @@ export const moonArmy = {
       detail:
         "Sages manipulate tides and moonlight to reposition allies while flooding enemies with debilitating hexes.",
       traits: [
-        "Tidal Bridge: Amphibious allies ignore water movement restrictions when adjacent to the sages.",
-        "Moonward Pulse: Heal 3 HP on one ally that starts the phase on water.",
+        "Guiding Stars: Balanced 7 ATK provides steady support damage from the back line.",
+        "Mystic Vigil: 16 HP gives them breathing room compared to other casters of the Covenant.",
       ],
       stats: { strength: 5, attack: 7, defence: 5, hp: 16, initiative: 6 },
     },
@@ -56,8 +56,8 @@ export const moonArmy = {
       detail:
         "Riders loop in crescent patterns, harrying foes while scouting behind enemy lines for weak points.",
       traits: [
-        "Swamp Skip: Ignore swamp movement penalties and attack penalties.",
-        "Sky Harriers: Gain +1 INIT when beginning combat from a higher elevation hex such as mountains.",
+        "Crescent Dive: 8 ATK slashes through enemy armour during their high-speed passes.",
+        "High Flier: Initiative 8 makes them swift contributors in each combat step.",
       ],
       stats: { strength: 6, attack: 8, defence: 5, hp: 17, initiative: 8 },
     },
@@ -70,8 +70,8 @@ export const moonArmy = {
       detail:
         "Veilbreakers dismantle fortifications with seismic crescents that shatter rockbound defenses.",
       traits: [
-        "Resonant Shatter: Ignore the strength cap imposed on cavalry in mountain hexes.",
-        "Fracture Wave: First successful hit reduces target DEF by 1 for the battle.",
+        "Siege Breakers: 8 STR and 7 ATK combine for powerful opening blows against tough foes.",
+        "Steadfast Advance: Solid 18 HP lets them keep hammering even after taking hits.",
       ],
       stats: { strength: 8, attack: 7, defence: 6, hp: 18, initiative: 6 },
     },

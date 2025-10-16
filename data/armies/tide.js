@@ -14,8 +14,8 @@ export const tideArmy = {
       detail:
         "Guardians advance as a rolling wave, their coral plating knitting closed the moment blows land.",
       traits: [
-        "Tidal Bulwark: Gain +1 DEF when fighting in or adjacent to water hexes.",
-        "Undertow Hold: Enemies that disengage suffer -1 INIT next round.",
+        "Coral Rampart: Natural 6 DEF makes them stubborn frontline defenders.",
+        "Rolling Wave: Their durable 19 HP lets them weather protracted clashes.",
       ],
       stats: { strength: 7, attack: 6, defence: 6, hp: 19, initiative: 5 },
     },
@@ -28,8 +28,8 @@ export const tideArmy = {
       detail:
         "Slingers sculpt the battlefield, eroding defensive walls while providing mobile cover for allies.",
       traits: [
-        "Erosive Volley: Reduce target DEF by 1 until the end of the battle when damage is dealt.",
-        "Misty Veil: Create light cover, granting adjacent allies +1 DEF after attacking.",
+        "Pressurised Jets: 8 ATK bursts carve through entrenched positions.",
+        "Veil of Spray: 15 HP gives them modest staying power for artillery units.",
       ],
       stats: { strength: 5, attack: 8, defence: 4, hp: 15, initiative: 6 },
     },
@@ -42,8 +42,8 @@ export const tideArmy = {
       detail:
         "Callers weave currents that ferry warriors along unseen rivers while drowning enemy supply lines.",
       traits: [
-        "River Gate: Once per turn, swap positions of two friendly units on water hexes.",
-        "Undercurrent Surge: Allied units entering battle from water gain +1 INIT this round.",
+        "Guiding Currents: 6 ATK helps them chip in damage while supporting allies.",
+        "Tidal Insight: Initiative 7 allows them to react quickly during each combat pass.",
       ],
       stats: { strength: 4, attack: 6, defence: 4, hp: 14, initiative: 7 },
     },
@@ -56,8 +56,8 @@ export const tideArmy = {
       detail:
         "Stalkers bind prey in tidal fronds, leaving them helpless as the rest of the enclave sweeps in.",
       traits: [
-        "Drowning Snare: First hit each battle roots the target, preventing movement next round.",
-        "Slipstream Veil: Gain +1 DEF against ranged attacks while in swamp or water.",
+        "Tidal Ambush: 7 ATK punishes foes that underestimate their reach.",
+        "Ebb and Flow: 16 HP and 8 INIT keep them dangerous deep into a battle.",
       ],
       stats: { strength: 6, attack: 7, defence: 5, hp: 16, initiative: 8 },
     },
@@ -70,8 +70,8 @@ export const tideArmy = {
       detail:
         "Marshals direct tidal booms that scatter opposing formations before the decisive strike lands.",
       traits: [
-        "Breaker Charge: Charge attacks from water hexes deal +2 damage.",
-        "Tidal Wake: After moving, push adjacent enemy units 1 hex directly away if possible.",
+        "Storm Surge: 7 ATK and 8 STR deliver crushing cavalry blows.",
+        "Wave-Rider: Initiative 7 keeps them on pace with other frontline Tideforged units.",
       ],
       stats: { strength: 8, attack: 7, defence: 5, hp: 18, initiative: 7 },
     },
