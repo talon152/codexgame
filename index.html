@@ -47,6 +47,15 @@
         <section class="selection-panel">
           <h2>Selected Cell</h2>
           <p id="selected-cell">None</p>
+          <div class="selected-cell-resources">
+            <h3>Resources</h3>
+            <ul
+              id="cell-resource-list"
+              class="resource-list"
+              aria-live="polite"
+              aria-label="Resources available in the selected cell"
+            ></ul>
+          </div>
           <div class="selected-cell-units">
             <h3>Units</h3>
             <ul
@@ -56,6 +65,12 @@
               aria-label="Units in the selected cell"
             ></ul>
           </div>
+        </section>
+        <section class="debug-panel" aria-label="Debug controls">
+          <h2>Debug Tools</h2>
+          <p class="debug-panel__description">
+            Prototype helpers that ignore resource costs.
+          </p>
           <button
             id="add-unit-button"
             type="button"

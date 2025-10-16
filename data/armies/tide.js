@@ -18,6 +18,7 @@ export const tideArmy = {
         "Rolling Wave: Their durable 19 HP lets them weather protracted clashes.",
       ],
       stats: { strength: 7, attack: 6, defence: 6, hp: 19, initiative: 5 },
+      cost: { gold: 1, metal: 2 },
     },
     {
       id: "brine-slingers",
@@ -32,6 +33,7 @@ export const tideArmy = {
         "Veil of Spray: 15 HP gives them modest staying power for artillery units.",
       ],
       stats: { strength: 5, attack: 8, defence: 4, hp: 15, initiative: 6 },
+      cost: { gold: 2, metal: 1 },
     },
     {
       id: "current-callers",
@@ -46,6 +48,7 @@ export const tideArmy = {
         "Tidal Insight: Initiative 7 allows them to react quickly during each combat pass.",
       ],
       stats: { strength: 4, attack: 6, defence: 4, hp: 14, initiative: 7 },
+      cost: { gold: 1, metal: 1 },
     },
     {
       id: "kelp-stalkers",
@@ -60,6 +63,7 @@ export const tideArmy = {
         "Ebb and Flow: 16 HP and 8 INIT keep them dangerous deep into a battle.",
       ],
       stats: { strength: 6, attack: 7, defence: 5, hp: 16, initiative: 8 },
+      cost: { gold: 2, metal: 2 },
     },
     {
       id: "storm-marshals",
@@ -74,6 +78,7 @@ export const tideArmy = {
         "Wave-Rider: Initiative 7 keeps them on pace with other frontline Tideforged units.",
       ],
       stats: { strength: 8, attack: 7, defence: 5, hp: 18, initiative: 7 },
+      cost: { gold: 2, metal: 3 },
     },
   ],
 };

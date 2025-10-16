@@ -18,6 +18,7 @@ export const emberArmy = {
         "Shieldbreaker Drill: Their solid 17 HP keeps them in the fight after crashing into the line.",
       ],
       stats: { strength: 7, attack: 7, defence: 5, hp: 17, initiative: 6 },
+      cost: { gold: 2, metal: 2 },
     },
     {
       id: "ashen-fusiliers",
@@ -32,6 +33,7 @@ export const emberArmy = {
         "Risky Rigging: Low 13 HP means they falter quickly if focused.",
       ],
       stats: { strength: 5, attack: 8, defence: 3, hp: 13, initiative: 7 },
+      cost: { gold: 2, metal: 1 },
     },
     {
       id: "pyre-adepts",
@@ -46,6 +48,7 @@ export const emberArmy = {
         "Fanatic Zeal: Initiative 8 keeps them acting alongside the fastest Ember troops.",
       ],
       stats: { strength: 6, attack: 7, defence: 4, hp: 15, initiative: 8 },
+      cost: { gold: 2, metal: 2 },
     },
     {
       id: "slag-wardens",
@@ -60,6 +63,7 @@ export const emberArmy = {
         "Radiant Core: Massive 21 HP makes them the toughest line holders in the legion.",
       ],
       stats: { strength: 8, attack: 5, defence: 7, hp: 21, initiative: 4 },
+      cost: { gold: 1, metal: 4 },
     },
     {
       id: "flare-outriders",
@@ -74,6 +78,7 @@ export const emberArmy = {
         "Ignition Spur: Blazing 9 INIT means they almost always strike first.",
       ],
       stats: { strength: 6, attack: 7, defence: 4, hp: 16, initiative: 9 },
+      cost: { gold: 3, metal: 1 },
     },
   ],
 };
