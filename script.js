@@ -22,6 +22,13 @@ const battleLogEntries = document.getElementById("battle-log-entries");
 const battleSpeedControl = document.getElementById("battle-speed-control");
 const battleSpeedValue = document.getElementById("battle-speed-value");
 const battleCloseButton = document.getElementById("battle-close");
+const helpButton = document.getElementById("help-button");
+const helpModal = document.getElementById("help-modal");
+const helpCloseButton = document.getElementById("help-close");
+const helpTabButtons = Array.from(
+  document.querySelectorAll("[data-help-tab]"),
+);
+const helpPanels = Array.from(document.querySelectorAll("[data-help-panel]"));
 
 const TERRAIN_TYPES = [
   { name: "forest", label: "Forest", className: "terrain-forest" },
@@ -320,7 +327,84 @@ const wait = (ms) =>
     window.setTimeout(resolve, ms);
   });
 
+let helpReturnFocusElement = null;
 let battleReturnFocusElement = null;
+
+const setActiveHelpTab = (tabId, { focusTab = false } = {}) => {
+  if (helpTabButtons.length === 0 || helpPanels.length === 0) {
+    return;
+  }
+
+  const fallbackTab = helpTabButtons[0];
+  const targetTab =
+    helpTabButtons.find((button) => button.dataset.helpTab === tabId) ??
+    fallbackTab;
+
+  helpTabButtons.forEach((button) => {
+    const isActive = button === targetTab;
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+  });
+
+  helpPanels.forEach((panel) => {
+    const isActive =
+      targetTab && panel.dataset.helpPanel === targetTab.dataset.helpTab;
+    panel.hidden = !isActive;
+    panel.classList.toggle("is-hidden", !isActive);
+  });
+
+  if (focusTab && targetTab) {
+    targetTab.focus();
+  }
+};
+
+const openHelpModal = () => {
+  if (!helpModal) {
+    return;
+  }
+
+  helpReturnFocusElement =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  helpModal.hidden = false;
+  helpModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  setActiveHelpTab("combat", { focusTab: true });
+};
+
+const closeHelpModal = () => {
+  if (!helpModal) {
+    return;
+  }
+
+  helpModal.hidden = true;
+  helpModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+
+  if (
+    helpReturnFocusElement instanceof HTMLElement &&
+    document.contains(helpReturnFocusElement)
+  ) {
+    helpReturnFocusElement.focus({ preventScroll: true });
+  }
+
+  helpReturnFocusElement = null;
+};
+
+const focusAdjacentHelpTab = (currentIndex, offset) => {
+  if (helpTabButtons.length === 0) {
+    return;
+  }
+
+  const total = helpTabButtons.length;
+  const nextIndex = (currentIndex + offset + total) % total;
+  const nextTab = helpTabButtons[nextIndex];
+
+  if (nextTab) {
+    setActiveHelpTab(nextTab.dataset.helpTab);
+    nextTab.focus();
+  }
+};
 
 const getBattleSpeedMultiplier = () => {
   if (!battleSpeedControl) {
@@ -919,4 +1003,63 @@ addUnitButton.addEventListener("click", () => {
   }
   const shouldOpen = unitPicker.hidden;
   toggleUnitPicker(shouldOpen);
+});
+
+if (helpButton) {
+  helpButton.addEventListener("click", () => {
+    if (helpModal && helpModal.getAttribute("aria-hidden") === "false") {
+      closeHelpModal();
+      return;
+    }
+
+    openHelpModal();
+  });
+}
+
+if (helpCloseButton) {
+  helpCloseButton.addEventListener("click", closeHelpModal);
+}
+
+if (helpModal) {
+  helpModal.addEventListener("click", (event) => {
+    if (event.target === helpModal) {
+      closeHelpModal();
+    }
+  });
+}
+
+helpTabButtons.forEach((button, index) => {
+  button.addEventListener("click", () => {
+    setActiveHelpTab(button.dataset.helpTab);
+  });
+
+  button.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      focusAdjacentHelpTab(index, 1);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      focusAdjacentHelpTab(index, -1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      const firstTab = helpTabButtons[0];
+      if (firstTab) {
+        setActiveHelpTab(firstTab.dataset.helpTab);
+        firstTab.focus();
+      }
+    } else if (event.key === "End") {
+      event.preventDefault();
+      const lastTab = helpTabButtons[helpTabButtons.length - 1];
+      if (lastTab) {
+        setActiveHelpTab(lastTab.dataset.helpTab);
+        lastTab.focus();
+      }
+    }
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && helpModal && helpModal.getAttribute("aria-hidden") === "false") {
+    closeHelpModal();
+  }
 });
