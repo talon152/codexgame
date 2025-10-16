@@ -37,6 +37,35 @@
         <section class="selection-panel">
           <h2>Selected Cell</h2>
           <p id="selected-cell">None</p>
+          <div class="selected-cell-units">
+            <h3>Units</h3>
+            <ul
+              id="cell-unit-list"
+              class="unit-list"
+              aria-live="polite"
+              aria-label="Units in the selected cell"
+            ></ul>
+          </div>
+          <button
+            id="add-unit-button"
+            type="button"
+            class="add-unit-button"
+            aria-expanded="false"
+            disabled
+          >
+            Choose Unit
+          </button>
+          <div
+            id="unit-picker"
+            class="unit-picker"
+            hidden
+            aria-label="Choose a unit to place in the selected cell"
+          >
+            <p class="unit-picker-instructions">
+              Select a unit below to assign it to the highlighted grid cell.
+            </p>
+            <div id="unit-picker-groups" class="unit-picker-groups"></div>
+          </div>
         </section>
       </aside>
     </main>
