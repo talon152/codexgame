@@ -16,8 +16,28 @@
         </p>
       </section>
       <aside class="sidebar" aria-live="polite">
-        <h2>Selected Cell</h2>
-        <p id="selected-cell">None</p>
+        <section class="turn-panel" aria-label="Turn details">
+          <h2>Turn Sequence</h2>
+          <div class="turn-header">
+            <span
+              id="current-faction"
+              class="faction-badge"
+              role="status"
+              aria-live="polite"
+            ></span>
+            <p id="turn-counter" class="turn-counter"></p>
+          </div>
+          <p id="phase-name" class="phase-name"></p>
+          <p id="phase-summary" class="phase-summary"></p>
+          <ol id="phase-list" class="phase-list" aria-label="Phases this turn"></ol>
+          <button id="advance-phase" type="button" class="next-turn-button">
+            Next Phase
+          </button>
+        </section>
+        <section class="selection-panel">
+          <h2>Selected Cell</h2>
+          <p id="selected-cell">None</p>
+        </section>
       </aside>
     </main>
     <script src="script.js"></script>

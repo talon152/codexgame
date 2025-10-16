@@ -2,6 +2,12 @@ const GRID_SIZE = 10;
 
 const mapGrid = document.getElementById("map-grid");
 const selectedCellDisplay = document.getElementById("selected-cell");
+const currentFactionDisplay = document.getElementById("current-faction");
+const turnCounterDisplay = document.getElementById("turn-counter");
+const phaseNameDisplay = document.getElementById("phase-name");
+const phaseSummaryDisplay = document.getElementById("phase-summary");
+const phaseListElement = document.getElementById("phase-list");
+const advancePhaseButton = document.getElementById("advance-phase");
 
 const TERRAIN_TYPES = [
   { name: "forest", label: "Forest", className: "terrain-forest" },
@@ -18,6 +24,110 @@ const getRandomTerrain = () =>
 document.documentElement.style.setProperty("--grid-size", GRID_SIZE);
 
 let selectedCell = null;
+
+const FACTIONS = [
+  {
+    id: "sun",
+    name: "Sun Dominion",
+    summary: "Radiant tacticians focused on swift expansion.",
+  },
+  {
+    id: "moon",
+    name: "Moon Covenant",
+    summary: "Patient mystics preparing calculated strikes.",
+  },
+];
+
+const TURN_PHASES = [
+  {
+    id: "start",
+    label: "Start Phase",
+    summary: "Ready units and resolve any upkeep effects.",
+  },
+  {
+    id: "main",
+    label: "Main Phase",
+    summary: "Deploy units, play cards, and issue strategic orders.",
+  },
+  {
+    id: "end",
+    label: "End Phase",
+    summary: "Clean up and prepare combat resolution.",
+  },
+];
+
+const turnState = {
+  turnNumber: 1,
+  currentFactionIndex: 0,
+  currentPhaseIndex: 0,
+};
+
+const renderPhaseList = () => {
+  phaseListElement.innerHTML = "";
+
+  TURN_PHASES.forEach((phase, index) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = phase.label;
+    listItem.dataset.phaseIndex = index.toString();
+    phaseListElement.appendChild(listItem);
+  });
+};
+
+const updatePhaseDisplay = () => {
+  const activePhase = TURN_PHASES[turnState.currentPhaseIndex];
+  phaseNameDisplay.textContent = activePhase.label;
+  phaseSummaryDisplay.textContent = activePhase.summary;
+
+  Array.from(phaseListElement.children).forEach((item, index) => {
+    const isActive = index === turnState.currentPhaseIndex;
+    const isComplete = index < turnState.currentPhaseIndex;
+    item.classList.toggle("is-active", isActive);
+    item.classList.toggle("is-complete", isComplete);
+
+    if (isActive) {
+      item.setAttribute("aria-current", "step");
+    } else {
+      item.removeAttribute("aria-current");
+    }
+  });
+};
+
+const updateFactionDisplay = () => {
+  const faction = FACTIONS[turnState.currentFactionIndex];
+  currentFactionDisplay.textContent = faction.name;
+  currentFactionDisplay.className = `faction-badge faction-${faction.id}`;
+  currentFactionDisplay.setAttribute("title", faction.summary);
+  turnCounterDisplay.textContent = `Turn ${turnState.turnNumber}`;
+};
+
+const updateAdvanceButton = () => {
+  const isLastPhase =
+    turnState.currentPhaseIndex === TURN_PHASES.length - 1;
+  advancePhaseButton.textContent = isLastPhase ? "End Turn" : "Next Phase";
+  advancePhaseButton.setAttribute(
+    "aria-label",
+    isLastPhase ? "End the current turn" : "Advance to the next phase",
+  );
+};
+
+const updateTurnDisplay = () => {
+  updateFactionDisplay();
+  updatePhaseDisplay();
+  updateAdvanceButton();
+};
+
+const advancePhase = () => {
+  if (turnState.currentPhaseIndex < TURN_PHASES.length - 1) {
+    turnState.currentPhaseIndex += 1;
+  } else {
+    turnState.currentPhaseIndex = 0;
+    turnState.currentFactionIndex =
+      (turnState.currentFactionIndex + 1) % FACTIONS.length;
+    turnState.turnNumber += 1;
+  }
+
+  updateTurnDisplay();
+};
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
 
@@ -77,3 +187,7 @@ const buildGrid = () => {
 };
 
 buildGrid();
+renderPhaseList();
+updateTurnDisplay();
+
+advancePhaseButton.addEventListener("click", advancePhase);
