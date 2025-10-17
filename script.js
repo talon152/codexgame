@@ -140,6 +140,13 @@ const UNIT_STAT_LABELS = [
 const getResourceDefinition = (key) =>
   RESOURCE_TYPES.find((resource) => resource.key === key);
 
+const ORTHOGONAL_DIRECTIONS = [
+  { dr: -1, dc: 0 },
+  { dr: 1, dc: 0 },
+  { dr: 0, dc: -1 },
+  { dr: 0, dc: 1 },
+];
+
 const randomIntInclusive = (min, max) => {
   const lower = Math.ceil(Math.min(min, max));
   const upper = Math.floor(Math.max(min, max));
@@ -2099,18 +2106,50 @@ const getReachableCells = (row, col, range, factionId) => {
   }
 
   const results = [];
-  for (let r = 0; r < GRID_SIZE; r += 1) {
-    for (let c = 0; c < GRID_SIZE; c += 1) {
-      const distance = Math.abs(row - r) + Math.abs(col - c);
-      if (distance === 0 || distance > maxRange) {
-        continue;
+  const visited = new Set([getCellKey(row, col)]);
+  const queue = [{ row, col, distance: 0 }];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    ORTHOGONAL_DIRECTIONS.forEach(({ dr, dc }) => {
+      const nextRow = current.row + dr;
+      const nextCol = current.col + dc;
+
+      if (
+        nextRow < 0 ||
+        nextRow >= GRID_SIZE ||
+        nextCol < 0 ||
+        nextCol >= GRID_SIZE
+      ) {
+        return;
       }
 
-      const occupants = getUnitsForCell(r, c);
-      const hasEnemyUnits = occupants.some((unit) => unit.factionId !== factionId);
+      const nextDistance = current.distance + 1;
+      if (nextDistance > maxRange) {
+        return;
+      }
 
-      results.push({ row: r, col: c, key: getCellKey(r, c), hasEnemyUnits });
-    }
+      const key = getCellKey(nextRow, nextCol);
+      if (visited.has(key)) {
+        return;
+      }
+
+      visited.add(key);
+      const occupants = getUnitsForCell(nextRow, nextCol);
+      const hasEnemyUnits = occupants.some((unit) => unit.factionId !== factionId);
+      results.push({
+        row: nextRow,
+        col: nextCol,
+        key,
+        hasEnemyUnits,
+        distance: nextDistance,
+      });
+
+      if (!hasEnemyUnits) {
+        queue.push({ row: nextRow, col: nextCol, distance: nextDistance });
+      }
+    });
   }
 
   return results;
