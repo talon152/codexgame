@@ -3404,6 +3404,10 @@ const createCell = (row, col) => {
 };
 
 const buildGrid = () => {
+  if (!mapGrid) {
+    return;
+  }
+
   const fragment = document.createDocumentFragment();
 
   for (let row = 0; row < GRID_SIZE; row += 1) {
@@ -3435,7 +3439,7 @@ if (battleSpeedControl) {
   updateBattleSpeedDisplay();
 }
 
-advancePhaseButton.addEventListener("click", advancePhase);
+advancePhaseButton?.addEventListener("click", advancePhase);
 buyUnitButton?.addEventListener("click", () => {
   if (buyUnitButton.disabled) {
     return;
