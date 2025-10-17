@@ -1804,33 +1804,26 @@ const updateProvinceOwnershipAfterBattle = (
   survivors,
   { cellElement = null } = {},
 ) => {
-  const currentOwner = getProvinceOwnerId(row, col);
-  const survivingFactions = new Set(survivors.map((unit) => unit.factionId));
-  let nextOwner = currentOwner;
-
   if (survivors.length === 0) {
-    nextOwner = null;
-  } else if (survivingFactions.size === 1) {
-    [nextOwner] = survivingFactions;
-  } else if (currentOwner && !survivingFactions.has(currentOwner)) {
-    nextOwner = null;
+    return;
   }
 
-  if (nextOwner === currentOwner) {
+  const currentOwner = getProvinceOwnerId(row, col);
+  const survivingFactions = new Set(survivors.map((unit) => unit.factionId));
+
+  if (survivingFactions.size !== 1) {
+    return;
+  }
+
+  const [nextOwner] = survivingFactions;
+  if (!nextOwner || nextOwner === currentOwner) {
     return;
   }
 
   setProvinceOwner(row, col, nextOwner, { cellElement });
 
-  if (nextOwner) {
-    const factionName = getFactionById(nextOwner)?.name ?? nextOwner;
-    appendBattleLog(`${factionName} seize control of the province.`);
-  } else if (currentOwner) {
-    const previousName = getFactionById(currentOwner)?.name ?? currentOwner;
-    appendBattleLog(`${previousName} lose their hold on the province.`);
-  } else {
-    appendBattleLog("The province is left unclaimed.");
-  }
+  const factionName = getFactionById(nextOwner)?.name ?? nextOwner;
+  appendBattleLog(`${factionName} seize control of the province.`);
 };
 
 const runBattleForCell = async ({ row, col, units }) => {
@@ -2465,10 +2458,11 @@ const executeMovementTo = (targetCell, targetCoords) => {
   const movedUnitIds = unitsToMove.map((unit) => unit.instanceId);
   setUnitsForCell(originRow, originCol, remainingUnits);
 
-  const destinationUnits = [
-    ...getUnitsForCell(targetCoords.row, targetCoords.col),
-    ...unitsToMove,
-  ];
+  const existingDestinationUnits = getUnitsForCell(
+    targetCoords.row,
+    targetCoords.col,
+  );
+  const destinationUnits = [...existingDestinationUnits, ...unitsToMove];
   setUnitsForCell(targetCoords.row, targetCoords.col, destinationUnits);
 
   const originCellElement = getCellElementAt(originRow, originCol);
@@ -2482,6 +2476,18 @@ const executeMovementTo = (targetCell, targetCoords) => {
   const targetKey = getCellKey(targetCoords.row, targetCoords.col);
   const targetInfo = movementState.targetInfo.get(targetKey);
   const hadEnemyUnits = Boolean(targetInfo?.hasEnemyUnits);
+
+  const movingFactionId = movementState.factionId;
+  if (
+    movingFactionId &&
+    existingDestinationUnits.length === 0 &&
+    getProvinceOwnerId(targetCoords.row, targetCoords.col) !== movingFactionId
+  ) {
+    setProvinceOwner(targetCoords.row, targetCoords.col, movingFactionId, {
+      cellElement: targetCell,
+    });
+  }
+
   resetMovementState();
   selectedUnitIds.clear();
   movedUnitIds.forEach((id) => selectedUnitIds.add(id));
