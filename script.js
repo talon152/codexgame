@@ -3,113 +3,86 @@ import {
   INDEPENDENT_FACTION,
   getRandomIndependentUnit,
 } from "./data/independent-units.js";
-
-const GRID_SIZE = 10;
-
-const mapGrid = document.getElementById("map-grid");
-const selectedCellDisplay = document.getElementById("selected-cell");
-const currentFactionDisplay = document.getElementById("current-faction");
-const turnCounterDisplay = document.getElementById("turn-counter");
-const phaseNameDisplay = document.getElementById("phase-name");
-const phaseSummaryDisplay = document.getElementById("phase-summary");
-const sidebarPhaseBadge = document.getElementById("sidebar-phase-badge");
-const advancePhaseButton = document.getElementById("advance-phase");
-const cellUnitList = document.getElementById("cell-unit-list");
-const cellResourceList = document.getElementById("cell-resource-list");
-const buyUnitButton = document.getElementById("buy-unit-button");
-const moveUnitsButton = document.getElementById("move-units-button");
-const selectionGuidance = document.getElementById("selection-guidance");
-const resourceGoldDisplay = document.getElementById("resource-gold");
-const resourceMetalDisplay = document.getElementById("resource-metal");
-const capitalGuidance = document.getElementById("capital-guidance");
-const provinceUnitList = document.getElementById("province-unit-list");
-const provinceUnitSummary = document.getElementById("province-unit-summary");
-const unitModal = document.getElementById("unit-modal");
-const unitModalList = document.getElementById("unit-modal-list");
-const unitModalCloseButton = document.getElementById("unit-modal-close");
-const unitModalFactionLabel = document.getElementById("unit-modal-faction");
-const unitDetailModal = document.getElementById("unit-detail-modal");
-const unitDetailCloseButton = document.getElementById("unit-detail-close");
-const unitDetailTitle = document.getElementById("unit-detail-title");
-const unitDetailFaction = document.getElementById("unit-detail-faction");
-const unitDetailRole = document.getElementById("unit-detail-role");
-const unitDetailLocation = document.getElementById("unit-detail-location");
-const unitDetailDescription = document.getElementById("unit-detail-description");
-const unitDetailStats = document.getElementById("unit-detail-stats");
-const armySelectorModal = document.getElementById("army-selector-modal");
-const armySelectorForm = document.getElementById("army-selector-form");
-const firstArmySelect = document.getElementById("first-army-select");
-const secondArmySelect = document.getElementById("second-army-select");
-const firstArmySummary = document.getElementById("first-army-summary");
-const secondArmySummary = document.getElementById("second-army-summary");
-const armySelectorStartButton = document.getElementById("army-selector-start");
-const armySelectorError = document.getElementById("army-selector-error");
-const battleModal = document.getElementById("battle-modal");
-const battleTopList = document.getElementById("battle-top-units");
-const battleBottomList = document.getElementById("battle-bottom-units");
-const battleTopLabel = document.getElementById("battle-top-label");
-const battleBottomLabel = document.getElementById("battle-bottom-label");
-const battleLocationDisplay = document.getElementById("battle-location");
-const battleLogEntries = document.getElementById("battle-log-entries");
-const battleSpeedControl = document.getElementById("battle-speed-control");
-const battleSpeedValue = document.getElementById("battle-speed-value");
-const battleCloseButton = document.getElementById("battle-close");
-const helpButton = document.getElementById("help-button");
-const helpModal = document.getElementById("help-modal");
-const helpCloseButton = document.getElementById("help-close");
-const helpTabButtons = Array.from(
-  document.querySelectorAll("[data-help-tab]"),
-);
-const helpPanels = Array.from(document.querySelectorAll("[data-help-panel]"));
-const overlaySelect = document.getElementById("overlay-select");
-
-const TERRAIN_TYPES = [
-  { name: "forest", label: "Forest", className: "terrain-forest" },
-  { name: "plain", label: "Plain", className: "terrain-plain" },
-  { name: "village", label: "Village", className: "terrain-village" },
-  { name: "mountain", label: "Mountain", className: "terrain-mountain" },
-  { name: "swamp", label: "Swamp", className: "terrain-swamp" },
-  { name: "water", label: "Water", className: "terrain-water" },
-];
-
-const TERRAIN_RESOURCE_RULES = {
-  forest: {
-    gold: { min: 1, max: 2 },
-    metal: { min: 1, max: 2 },
-  },
-  plain: {
-    gold: { min: 2, max: 4 },
-    metal: { min: 0, max: 1 },
-  },
-  village: {
-    gold: { min: 3, max: 5 },
-    metal: { min: 1, max: 2 },
-  },
-  mountain: {
-    gold: { min: 0, max: 1 },
-    metal: { min: 3, max: 5 },
-  },
-  swamp: {
-    gold: { min: 1, max: 3 },
-    metal: { min: 0, max: 1 },
-  },
-  water: {
-    gold: { min: 1, max: 2 },
-    metal: { min: 0, max: 0 },
-  },
-};
-
-const RESOURCE_TYPES = [
-  { key: "gold", label: "Gold" },
-  { key: "metal", label: "Metal" },
-];
-
-const CAPITAL_PRODUCTION = {
-  sun: { gold: 4, metal: 1 },
-  moon: { gold: 3, metal: 2 },
-  ember: { gold: 2, metal: 3 },
-  tide: { gold: 3, metal: 1 },
-};
+import {
+  GRID_SIZE,
+  RESOURCE_TYPES,
+  TERRAIN_TYPES,
+  TURN_PHASES,
+  UNIT_STAT_LABELS,
+  ORTHOGONAL_DIRECTIONS,
+  START_PHASE_INDEX,
+  MAIN_PHASE_INDEX,
+  END_PHASE_INDEX,
+} from "./src/constants.js";
+import {
+  mapGrid,
+  selectedCellDisplay,
+  currentFactionDisplay,
+  turnCounterDisplay,
+  phaseNameDisplay,
+  phaseSummaryDisplay,
+  sidebarPhaseBadge,
+  advancePhaseButton,
+  cellUnitList,
+  cellResourceList,
+  buyUnitButton,
+  moveUnitsButton,
+  selectionGuidance,
+  resourceGoldDisplay,
+  resourceMetalDisplay,
+  capitalGuidance,
+  provinceUnitList,
+  provinceUnitSummary,
+  unitModal,
+  unitModalList,
+  unitModalCloseButton,
+  unitModalFactionLabel,
+  unitDetailModal,
+  unitDetailCloseButton,
+  unitDetailTitle,
+  unitDetailFaction,
+  unitDetailRole,
+  unitDetailLocation,
+  unitDetailDescription,
+  unitDetailStats,
+  armySelectorModal,
+  armySelectorForm,
+  firstArmySelect,
+  secondArmySelect,
+  firstArmySummary,
+  secondArmySummary,
+  armySelectorStartButton,
+  armySelectorError,
+  battleModal,
+  battleTopList,
+  battleBottomList,
+  battleTopLabel,
+  battleBottomLabel,
+  battleLocationDisplay,
+  battleLogEntries,
+  battleSpeedControl,
+  battleSpeedValue,
+  battleCloseButton,
+  helpButton,
+  helpModal,
+  helpCloseButton,
+  helpTabButtons,
+  helpPanels,
+  overlaySelect,
+} from "./src/ui/dom-elements.js";
+import {
+  adjustFactionResources,
+  canFactionAfford,
+  getCapitalProductionForFaction,
+  getFactionResources,
+  getResourceDefinition,
+  getResourcesForCellElement,
+  resetFactionResources,
+  rollResourcesForTerrain,
+  setFactionResources,
+  spendFactionResources,
+} from "./src/resources.js";
+import { randomIntInclusive } from "./src/utils/random.js";
 
 const getRandomTerrain = () =>
   TERRAIN_TYPES[Math.floor(Math.random() * TERRAIN_TYPES.length)];
@@ -121,7 +94,6 @@ let unitInstanceCounter = 0;
 let isResolvingBattles = false;
 let factions = [];
 const unitRosters = new Map();
-const factionResources = new Map();
 const selectedUnitIds = new Set();
 let lastRenderedCellKey = null;
 
@@ -155,139 +127,6 @@ const applyOverlaySelection = (value) => {
   );
 };
 
-const UNIT_STAT_LABELS = [
-  { key: "strength", label: "STR" },
-  { key: "attack", label: "ATK" },
-  { key: "defence", label: "DEF" },
-  { key: "movement", label: "MOVE" },
-  { key: "hp", label: "HP" },
-  { key: "initiative", label: "INIT" },
-];
-
-const getResourceDefinition = (key) =>
-  RESOURCE_TYPES.find((resource) => resource.key === key);
-
-const ORTHOGONAL_DIRECTIONS = [
-  { dr: -1, dc: 0 },
-  { dr: 1, dc: 0 },
-  { dr: 0, dc: -1 },
-  { dr: 0, dc: 1 },
-];
-
-const randomIntInclusive = (min, max) => {
-  const lower = Math.ceil(Math.min(min, max));
-  const upper = Math.floor(Math.max(min, max));
-  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
-};
-
-const rollResourcesForTerrain = (terrainName) => {
-  const rules = TERRAIN_RESOURCE_RULES[terrainName] ?? {};
-  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
-    const range = rules[key] ?? { min: 0, max: 0 };
-    return {
-      ...accumulator,
-      [key]: randomIntInclusive(range.min ?? 0, range.max ?? 0),
-    };
-  }, {});
-};
-
-const getResourcesForCellElement = (cell) => {
-  if (!cell) {
-    return {};
-  }
-
-  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
-    const value = Number.parseInt(cell.dataset?.[key] ?? "0", 10);
-    if (!Number.isNaN(value) && value > 0) {
-      return { ...accumulator, [key]: value };
-    }
-    return accumulator;
-  }, {});
-};
-
-const normaliseAmount = (value) => {
-  if (typeof value !== "number") {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) {
-      return 0;
-    }
-    return Math.trunc(parsed);
-  }
-
-  return Number.isFinite(value) ? Math.trunc(value) : 0;
-};
-
-const getFactionResources = (factionId) => {
-  if (!factionId) {
-    return { gold: 0, metal: 0 };
-  }
-
-  const stored = factionResources.get(factionId);
-  if (!stored) {
-    const defaults = { gold: 0, metal: 0 };
-    factionResources.set(factionId, defaults);
-    return { ...defaults };
-  }
-
-  const gold = normaliseAmount(stored.gold ?? 0);
-  const metal = normaliseAmount(stored.metal ?? 0);
-  return { gold, metal };
-};
-
-const setFactionResources = (factionId, values) => {
-  if (!factionId) {
-    return;
-  }
-
-  const gold = Math.max(0, normaliseAmount(values?.gold ?? 0));
-  const metal = Math.max(0, normaliseAmount(values?.metal ?? 0));
-  factionResources.set(factionId, { gold, metal });
-};
-
-const adjustFactionResources = (factionId, delta) => {
-  if (!factionId) {
-    return { gold: 0, metal: 0 };
-  }
-
-  const current = getFactionResources(factionId);
-  const nextGold = Math.max(0, current.gold + normaliseAmount(delta?.gold ?? 0));
-  const nextMetal = Math.max(0, current.metal + normaliseAmount(delta?.metal ?? 0));
-  const nextResources = { gold: nextGold, metal: nextMetal };
-  setFactionResources(factionId, nextResources);
-  return nextResources;
-};
-
-const canFactionAfford = (factionId, cost = {}) => {
-  if (!factionId) {
-    return false;
-  }
-
-  const resources = getFactionResources(factionId);
-  return Object.entries(cost).every(([key, amount]) => {
-    const required = Math.max(0, normaliseAmount(amount ?? 0));
-    if (required === 0) {
-      return true;
-    }
-    return (resources[key] ?? 0) >= required;
-  });
-};
-
-const spendFactionResources = (factionId, cost = {}) => {
-  if (!canFactionAfford(factionId, cost)) {
-    return false;
-  }
-
-  adjustFactionResources(factionId, {
-    gold: -normaliseAmount(cost.gold ?? 0),
-    metal: -normaliseAmount(cost.metal ?? 0),
-  });
-
-  return true;
-};
-
-const getCapitalProductionForFaction = (factionId) =>
-  CAPITAL_PRODUCTION[factionId] ?? { gold: 2, metal: 1 };
-
 const setSelectionGuidance = (message = DEFAULT_SELECTION_MESSAGE) => {
   if (!selectionGuidance) {
     return;
@@ -308,32 +147,6 @@ const updateResourceDisplay = () => {
     resourceMetalDisplay.textContent = `Metal: ${resources.metal}`;
   }
 };
-
-const TURN_PHASES = [
-  {
-    id: "start",
-    label: "Start Phase",
-    summary: "Ready units, regenerate health, and resolve any upkeep effects.",
-  },
-  {
-    id: "main",
-    label: "Main Phase",
-    summary: "Deploy units, play cards, and issue strategic orders.",
-  },
-  {
-    id: "end",
-    label: "End Phase",
-    summary: "Clean up and prepare combat resolution.",
-  },
-];
-
-const PHASE_INDEX = TURN_PHASES.reduce((accumulator, phase, index) => {
-  return { ...accumulator, [phase.id]: index };
-}, {});
-
-const START_PHASE_INDEX = PHASE_INDEX.start ?? 0;
-const MAIN_PHASE_INDEX = PHASE_INDEX.main ?? 0;
-const END_PHASE_INDEX = PHASE_INDEX.end ?? TURN_PHASES.length - 1;
 
 const turnState = {
   turnNumber: 1,
@@ -1008,7 +821,7 @@ const applyArmySelection = (armyIds) => {
 
   factions = selectedArmies.map((army) => army.faction);
   unitRosters.clear();
-  factionResources.clear();
+  resetFactionResources();
 
   selectedArmies.forEach((army) => {
     unitRosters.set(army.faction.id, Array.isArray(army.roster) ? army.roster : []);
