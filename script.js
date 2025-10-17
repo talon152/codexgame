@@ -51,6 +51,7 @@ const helpTabButtons = Array.from(
   document.querySelectorAll("[data-help-tab]"),
 );
 const helpPanels = Array.from(document.querySelectorAll("[data-help-panel]"));
+const overlaySelect = document.getElementById("overlay-select");
 
 const TERRAIN_TYPES = [
   { name: "forest", label: "Forest", className: "terrain-forest" },
@@ -127,6 +128,15 @@ const movementState = {
 
 const DEFAULT_SELECTION_MESSAGE =
   selectionGuidance?.textContent?.trim() ?? "Select a cell to manage forces.";
+
+const applyOverlaySelection = (value) => {
+  const overlay = value === "resources" ? "resources" : "none";
+  if (!mapGrid) {
+    return;
+  }
+
+  mapGrid.classList.toggle("map-grid--show-resources", overlay === "resources");
+};
 
 const UNIT_STAT_LABELS = [
   { key: "strength", label: "STR" },
@@ -3021,6 +3031,15 @@ buildGrid();
 updateTurnDisplay();
 renderSelectedCellDetails(null);
 openArmySelector({ focusSelect: true });
+
+if (overlaySelect) {
+  applyOverlaySelection(overlaySelect.value);
+  overlaySelect.addEventListener("change", (event) => {
+    applyOverlaySelection(event.target.value);
+  });
+} else {
+  applyOverlaySelection("none");
+}
 
 if (battleSpeedControl) {
   battleSpeedControl.addEventListener("input", updateBattleSpeedDisplay);
