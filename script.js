@@ -122,6 +122,7 @@ const movementState = {
   range: 0,
   factionId: null,
   targets: new Set(),
+  targetInfo: new Map(),
 };
 
 const DEFAULT_SELECTION_MESSAGE =
@@ -821,6 +822,7 @@ const resetBoardState = () => {
     cell.classList.remove("cell--capital");
     cell.classList.remove("cell--capital-eligible");
     cell.classList.remove("cell--movement-target");
+    cell.classList.remove("cell--movement-target-hostile");
     delete cell.dataset.capitalFaction;
     delete cell.dataset.capitalName;
     const badge = cell.querySelector(".cell-capital-badge");
@@ -1929,9 +1931,12 @@ const clearMovementHighlights = () => {
     return;
   }
 
-  mapGrid.querySelectorAll(".cell--movement-target").forEach((cell) => {
-    cell.classList.remove("cell--movement-target");
-  });
+  mapGrid.querySelectorAll(".cell--movement-target").forEach((cell) =>
+    cell.classList.remove("cell--movement-target"),
+  );
+  mapGrid.querySelectorAll(".cell--movement-target-hostile").forEach((cell) =>
+    cell.classList.remove("cell--movement-target-hostile"),
+  );
 };
 
 const resetMovementState = () => {
@@ -1942,6 +1947,7 @@ const resetMovementState = () => {
   movementState.range = 0;
   movementState.factionId = null;
   movementState.targets.clear();
+  movementState.targetInfo.clear();
   clearMovementHighlights();
 
   if (moveUnitsButton) {
@@ -2102,11 +2108,8 @@ const getReachableCells = (row, col, range, factionId) => {
 
       const occupants = getUnitsForCell(r, c);
       const hasEnemyUnits = occupants.some((unit) => unit.factionId !== factionId);
-      if (hasEnemyUnits) {
-        continue;
-      }
 
-      results.push({ row: r, col: c, key: getCellKey(r, c) });
+      results.push({ row: r, col: c, key: getCellKey(r, c), hasEnemyUnits });
     }
   }
 
@@ -2118,7 +2121,11 @@ const highlightMovementTargets = (targets) => {
   targets.forEach(({ row, col }) => {
     const cell = getCellElementAt(row, col);
     if (cell) {
-      cell.classList.add("cell--movement-target");
+      cell.classList.add(
+        movementState.targetInfo.get(getCellKey(row, col))?.hasEnemyUnits
+          ? "cell--movement-target-hostile"
+          : "cell--movement-target",
+      );
     }
   });
 };
@@ -2193,6 +2200,7 @@ const beginUnitMovement = () => {
   movementState.range = range;
   movementState.factionId = activeFaction.id;
   movementState.targets = new Set(reachable.map(({ key }) => key));
+  movementState.targetInfo = new Map(reachable.map((target) => [target.key, target]));
 
   highlightMovementTargets(reachable);
   updateActionButtonsAvailability();
@@ -2272,6 +2280,9 @@ const executeMovementTo = (targetCell, targetCoords) => {
 
   const movedCount = unitsToMove.length;
   const moveRange = movementState.range;
+  const targetKey = getCellKey(targetCoords.row, targetCoords.col);
+  const targetInfo = movementState.targetInfo.get(targetKey);
+  const hadEnemyUnits = Boolean(targetInfo?.hasEnemyUnits);
   resetMovementState();
   selectedUnitIds.clear();
   movedUnitIds.forEach((id) => selectedUnitIds.add(id));
@@ -2288,10 +2299,12 @@ const executeMovementTo = (targetCell, targetCoords) => {
   lastRenderedCellKey = getCellKey(targetCoords.row, targetCoords.col);
   renderSelectedCellDetails(targetCell);
 
+  const rangeLabel = moveRange === 1 ? "space" : "spaces";
+  const arrivalMessage = hadEnemyUnits
+    ? " and engaged enemy forces."
+    : ".";
   setSelectionGuidance(
-    `Moved ${movedCount} unit${movedCount === 1 ? "" : "s"} up to ${moveRange} ${
-      moveRange === 1 ? "space" : "spaces"
-    }.`,
+    `Moved ${movedCount} unit${movedCount === 1 ? "" : "s"} up to ${moveRange} ${rangeLabel}${arrivalMessage}`,
   );
 };
 

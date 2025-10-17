@@ -158,6 +158,19 @@ body.modal-open {
   pointer-events: none;
 }
 
+.cell--movement-target-hostile {
+  box-shadow: inset 0 0 0 2px rgba(230, 57, 70, 0.6),
+    0 0 0 1px rgba(230, 57, 70, 0.35);
+}
+
+.cell--movement-target-hostile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(230, 57, 70, 0.25);
+  pointer-events: none;
+}
+
 .cell--capital-eligible {
   box-shadow: inset 0 0 0 2px rgba(230, 57, 70, 0.45),
     0 0 0 1px rgba(230, 57, 70, 0.32);
