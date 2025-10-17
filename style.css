@@ -145,6 +145,51 @@ body.modal-open {
   box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.35);
 }
 
+.cell--owned {
+  border-color: rgba(29, 53, 87, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(29, 53, 87, 0.35);
+}
+
+.cell--capital.cell--owned {
+  border-color: rgba(230, 57, 70, 0.7);
+  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.35),
+    inset 0 0 0 2px rgba(29, 53, 87, 0.35);
+}
+
+.cell--owned::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background: rgba(255, 255, 255, 0.35);
+  transition: opacity 120ms ease;
+}
+
+.cell--owner-generic::before {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.cell--owner-sun::before {
+  background: rgba(255, 196, 0, 0.35);
+}
+
+.cell--owner-moon::before {
+  background: rgba(108, 99, 255, 0.35);
+}
+
+.cell--owner-ember::before {
+  background: rgba(230, 82, 65, 0.35);
+}
+
+.cell--owner-tide::before {
+  background: rgba(56, 162, 173, 0.32);
+}
+
+.cell--owner-independent::before {
+  background: rgba(128, 128, 128, 0.3);
+}
+
 .cell--movement-target {
   box-shadow: inset 0 0 0 2px rgba(29, 53, 87, 0.55),
     0 0 0 1px rgba(29, 53, 87, 0.35);

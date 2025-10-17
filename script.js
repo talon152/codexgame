@@ -164,6 +164,20 @@ const rollResourcesForTerrain = (terrainName) => {
   }, {});
 };
 
+const getResourcesForCellElement = (cell) => {
+  if (!cell) {
+    return {};
+  }
+
+  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
+    const value = Number.parseInt(cell.dataset?.[key] ?? "0", 10);
+    if (!Number.isNaN(value) && value > 0) {
+      return { ...accumulator, [key]: value };
+    }
+    return accumulator;
+  }, {});
+};
+
 const normaliseAmount = (value) => {
   if (typeof value !== "number") {
     const parsed = Number(value);
@@ -300,9 +314,23 @@ const turnState = {
   currentPhaseIndex: 0,
 };
 
+const getCellKey = (row, col) => `${row}-${col}`;
+
 const boardUnits = new Map();
+const provinceOwners = new Map();
 
 const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
+const OWNER_CLASS_BY_FACTION = new Map([
+  ["sun", "cell--owner-sun"],
+  ["moon", "cell--owner-moon"],
+  ["ember", "cell--owner-ember"],
+  ["tide", "cell--owner-tide"],
+  [INDEPENDENT_FACTION_ID, "cell--owner-independent"],
+]);
+
+const OWNER_CLASS_LIST = Array.from(
+  new Set([...OWNER_CLASS_BY_FACTION.values(), "cell--owner-generic"]),
+);
 const capitalAssignments = new Map();
 
 const capitalSelectionState = {
@@ -386,34 +414,6 @@ const updateCapitalHighlights = () => {
       cell.classList.add("cell--capital-eligible");
     }
   });
-};
-
-const markCapitalCell = (cell, faction) => {
-  if (!cell || !faction) {
-    return;
-  }
-
-  cell.classList.add("cell--capital");
-  cell.dataset.capitalFaction = faction.id;
-  cell.dataset.capitalName = faction.name ?? faction.id;
-
-  let badge = cell.querySelector(".cell-capital-badge");
-  if (!badge) {
-    badge = document.createElement("span");
-    badge.className = "cell-capital-badge";
-    badge.textContent = "Capital";
-    badge.setAttribute(
-      "title",
-      `${cell.dataset.capitalName ?? "Capital"} stronghold`,
-    );
-
-    const terrainLabel = cell.querySelector(".cell-terrain");
-    if (terrainLabel) {
-      terrainLabel.insertAdjacentElement("beforebegin", badge);
-    } else {
-      cell.prepend(badge);
-    }
-  }
 };
 
 const beginCapitalSelection = () => {
@@ -810,8 +810,19 @@ const renderUnitModalOptions = () => {
 
 let hasInitialisedArmySelector = false;
 
+const clearProvinceOwnerForCell = (cell) => {
+  if (!cell) {
+    return;
+  }
+
+  cell.classList.remove("cell--owned");
+  OWNER_CLASS_LIST.forEach((className) => cell.classList.remove(className));
+  delete cell.dataset.ownerFaction;
+};
+
 const resetBoardState = () => {
   boardUnits.clear();
+  provinceOwners.clear();
   selectedUnitIds.clear();
   lastRenderedCellKey = null;
   resetMovementState();
@@ -830,6 +841,7 @@ const resetBoardState = () => {
     cell.classList.remove("cell--capital-eligible");
     cell.classList.remove("cell--movement-target");
     cell.classList.remove("cell--movement-target-hostile");
+    clearProvinceOwnerForCell(cell);
     delete cell.dataset.capitalFaction;
     delete cell.dataset.capitalName;
     const badge = cell.querySelector(".cell-capital-badge");
@@ -1052,14 +1064,59 @@ const collectCapitalIncomeForActiveFaction = () => {
     return null;
   }
 
-  if (!capitalAssignments.has(faction.id)) {
+  const capitalCoordinates = capitalAssignments.get(faction.id);
+  if (!capitalCoordinates) {
+    return null;
+  }
+
+  const ownerId = getProvinceOwnerId(capitalCoordinates.row, capitalCoordinates.col);
+  if (ownerId !== faction.id) {
     return null;
   }
 
   const production = getCapitalProductionForFaction(faction.id);
   adjustFactionResources(faction.id, production);
-  updateResourceDisplay();
   return production;
+};
+
+const collectTerritoryIncomeForActiveFaction = () => {
+  const faction = getActiveFaction();
+  if (!faction) {
+    return null;
+  }
+
+  let totalGold = 0;
+  let totalMetal = 0;
+
+  provinceOwners.forEach((ownerId, key) => {
+    if (ownerId !== faction.id) {
+      return;
+    }
+
+    const [rowString, colString] = key.split("-");
+    const row = Number.parseInt(rowString ?? "", 10);
+    const col = Number.parseInt(colString ?? "", 10);
+
+    if (Number.isNaN(row) || Number.isNaN(col)) {
+      return;
+    }
+
+    const cell = getCellElementAt(row, col);
+    if (!cell) {
+      return;
+    }
+
+    const resources = getResourcesForCellElement(cell);
+    totalGold += resources.gold ?? 0;
+    totalMetal += resources.metal ?? 0;
+  });
+
+  if (totalGold === 0 && totalMetal === 0) {
+    return null;
+  }
+
+  adjustFactionResources(faction.id, { gold: totalGold, metal: totalMetal });
+  return { gold: totalGold, metal: totalMetal };
 };
 
 const runStartPhase = () => {
@@ -1069,20 +1126,47 @@ const runStartPhase = () => {
   }
 
   turnState.currentPhaseIndex = START_PHASE_INDEX;
-  const production = collectCapitalIncomeForActiveFaction();
+  const capitalProduction = collectCapitalIncomeForActiveFaction();
+  const territoryProduction = collectTerritoryIncomeForActiveFaction();
   applyStartPhaseRegeneration();
+  updateResourceDisplay();
   updateTurnDisplay();
-  if (production && phaseSummaryDisplay) {
-    const parts = [];
-    if (production.gold > 0) {
-      parts.push(`${production.gold} gold`);
+
+  if (phaseSummaryDisplay) {
+    const summaryParts = [];
+
+    if (capitalProduction) {
+      const capitalParts = [];
+      if (capitalProduction.gold > 0) {
+        capitalParts.push(`${capitalProduction.gold} gold`);
+      }
+      if (capitalProduction.metal > 0) {
+        capitalParts.push(`${capitalProduction.metal} metal`);
+      }
+      if (capitalParts.length > 0) {
+        summaryParts.push(`Capital yields ${capitalParts.join(" and ")}.`);
+      }
     }
-    if (production.metal > 0) {
-      parts.push(`${production.metal} metal`);
+
+    if (territoryProduction) {
+      const territoryParts = [];
+      if (territoryProduction.gold > 0) {
+        territoryParts.push(`${territoryProduction.gold} gold`);
+      }
+      if (territoryProduction.metal > 0) {
+        territoryParts.push(`${territoryProduction.metal} metal`);
+      }
+      if (territoryParts.length > 0) {
+        summaryParts.push(
+          `Provinces provide ${territoryParts.join(" and ")}.`,
+        );
+      }
     }
-    if (parts.length > 0) {
+
+    if (summaryParts.length > 0) {
       const summaryText = phaseSummaryDisplay.textContent ?? "";
-      phaseSummaryDisplay.textContent = `${summaryText} Capital yields ${parts.join(" and ")}.`;
+      const appended = `${summaryText} ${summaryParts.join(" ")}`.trim();
+      phaseSummaryDisplay.textContent = appended;
     }
   }
 
@@ -1154,8 +1238,6 @@ const getFactionById = (id) => {
 
   return factions.find((faction) => faction.id === id);
 };
-
-const getCellKey = (row, col) => `${row}-${col}`;
 
 const getCellCoordinates = (cell) => {
   if (!cell) {
@@ -1384,6 +1466,39 @@ const getCellElementAt = (row, col) => {
   }
 
   return mapGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+};
+
+const getProvinceOwnerId = (row, col) => {
+  const key = getCellKey(row, col);
+  return provinceOwners.get(key) ?? null;
+};
+
+const setProvinceOwner = (row, col, factionId, { cellElement = null } = {}) => {
+  const key = getCellKey(row, col);
+  const ownerId = typeof factionId === "string" && factionId.length > 0 ? factionId : null;
+
+  if (ownerId) {
+    provinceOwners.set(key, ownerId);
+  } else {
+    provinceOwners.delete(key);
+  }
+
+  const cell = cellElement ?? getCellElementAt(row, col);
+  if (!cell) {
+    return ownerId;
+  }
+
+  clearProvinceOwnerForCell(cell);
+
+  if (ownerId) {
+    cell.classList.add("cell--owned");
+    const ownerClass =
+      OWNER_CLASS_BY_FACTION.get(ownerId) ?? "cell--owner-generic";
+    cell.classList.add(ownerClass);
+    cell.dataset.ownerFaction = ownerId;
+  }
+
+  return ownerId;
 };
 
 const getCellTerrainInfo = (row, col) => {
@@ -1675,6 +1790,41 @@ const getContestedCells = () => {
   return contested;
 };
 
+const updateProvinceOwnershipAfterBattle = (
+  row,
+  col,
+  survivors,
+  { cellElement = null } = {},
+) => {
+  const currentOwner = getProvinceOwnerId(row, col);
+  const survivingFactions = new Set(survivors.map((unit) => unit.factionId));
+  let nextOwner = currentOwner;
+
+  if (survivors.length === 0) {
+    nextOwner = null;
+  } else if (survivingFactions.size === 1) {
+    [nextOwner] = survivingFactions;
+  } else if (currentOwner && !survivingFactions.has(currentOwner)) {
+    nextOwner = null;
+  }
+
+  if (nextOwner === currentOwner) {
+    return;
+  }
+
+  setProvinceOwner(row, col, nextOwner, { cellElement });
+
+  if (nextOwner) {
+    const factionName = getFactionById(nextOwner)?.name ?? nextOwner;
+    appendBattleLog(`${factionName} seize control of the province.`);
+  } else if (currentOwner) {
+    const previousName = getFactionById(currentOwner)?.name ?? currentOwner;
+    appendBattleLog(`${previousName} lose their hold on the province.`);
+  } else {
+    appendBattleLog("The province is left unclaimed.");
+  }
+};
+
 const runBattleForCell = async ({ row, col, units }) => {
   const uniqueFactionIds = Array.from(
     new Set(units.map((unit) => unit.factionId)),
@@ -1869,6 +2019,8 @@ const runBattleForCell = async ({ row, col, units }) => {
   if (cellElement) {
     updateCellUnitStack(cellElement, survivors);
   }
+
+  updateProvinceOwnershipAfterBattle(row, col, survivors, { cellElement });
 
   if (
     selectedCell &&
@@ -2436,20 +2588,6 @@ const completeCapitalSelection = () => {
   runStartPhase();
 };
 
-const getResourcesForCellElement = (cell) => {
-  if (!cell) {
-    return {};
-  }
-
-  return RESOURCE_TYPES.reduce((accumulator, { key }) => {
-    const value = Number.parseInt(cell.dataset?.[key] ?? "0", 10);
-    if (!Number.isNaN(value) && value > 0) {
-      return { ...accumulator, [key]: value };
-    }
-    return accumulator;
-  }, {});
-};
-
 const renderCellResourceList = (cell) => {
   if (!cellResourceList) {
     return;
@@ -2618,6 +2756,18 @@ const renderSelectedCellDetails = (cell) => {
     const capitalName = capitalOwner?.name ?? cell.dataset.capitalName ?? capitalOwnerId;
     selectedText += ` — Capital of ${capitalName}`;
   }
+  const ownerId = cell.dataset.ownerFaction;
+  if (ownerId) {
+    const owner = getFactionById(ownerId);
+    const ownerName = owner?.name ?? ownerId;
+    if (capitalOwnerId && ownerId === capitalOwnerId) {
+      selectedText += ` — Held by ${ownerName}`;
+    } else {
+      selectedText += ` — Controlled by ${ownerName}`;
+    }
+  } else if (!capitalOwnerId) {
+    selectedText += " — Unclaimed province";
+  }
   selectedCellDisplay.textContent = selectedText;
 
   const units = getUnitsForCell(row, col);
@@ -2626,6 +2776,45 @@ const renderSelectedCellDetails = (cell) => {
   renderCellUnitList(row, col);
   updateActionButtonsAvailability();
   refreshSelectionStatus();
+};
+
+const markCapitalCell = (cell, faction) => {
+  if (!cell || !faction) {
+    return;
+  }
+
+  cell.classList.add("cell--capital");
+  cell.dataset.capitalFaction = faction.id;
+  cell.dataset.capitalName = faction.name ?? faction.id;
+
+  let badge = cell.querySelector(".cell-capital-badge");
+  if (!badge) {
+    badge = document.createElement("span");
+    badge.className = "cell-capital-badge";
+    badge.textContent = "Capital";
+    badge.setAttribute(
+      "title",
+      `${cell.dataset.capitalName ?? "Capital"} stronghold`,
+    );
+
+    const terrainLabel = cell.querySelector(".cell-terrain");
+    if (terrainLabel) {
+      terrainLabel.insertAdjacentElement("beforebegin", badge);
+    } else {
+      cell.prepend(badge);
+    }
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (coordinates) {
+    setProvinceOwner(coordinates.row, coordinates.col, faction.id, {
+      cellElement: cell,
+    });
+  }
+
+  if (selectedCell === cell) {
+    renderSelectedCellDetails(cell);
+  }
 };
 
 const handleAddUnitToSelectedCell = (factionId, template) => {
