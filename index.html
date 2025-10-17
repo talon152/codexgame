@@ -8,6 +8,22 @@
   </head>
   <body>
     <main class="layout">
+      <aside class="province-sidebar" aria-label="Province units">
+        <header class="province-sidebar__header">
+          <h2 class="province-sidebar__title">Province Units</h2>
+          <p id="province-unit-summary" class="province-sidebar__summary">
+            Select a province to review stationed forces.
+          </p>
+        </header>
+        <div class="province-sidebar__content">
+          <ul
+            id="province-unit-list"
+            class="province-unit-list"
+            role="list"
+            aria-live="polite"
+          ></ul>
+        </div>
+      </aside>
       <section class="board-panel" aria-label="Game board">
         <header class="panel-header">
           <div class="turn-status" role="status" aria-live="polite">
@@ -146,6 +162,40 @@
         </section>
       </aside>
     </main>
+    <div
+      id="unit-detail-modal"
+      class="unit-detail-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div
+        class="unit-detail-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unit-detail-title"
+      >
+        <header class="unit-detail-header">
+          <p id="unit-detail-faction" class="unit-detail-faction"></p>
+          <h2 id="unit-detail-title" class="unit-detail-title"></h2>
+          <p id="unit-detail-role" class="unit-detail-role"></p>
+          <p id="unit-detail-location" class="unit-detail-location"></p>
+        </header>
+        <div class="unit-detail-body">
+          <div id="unit-detail-stats" class="unit-detail-stats"></div>
+          <p id="unit-detail-description" class="unit-detail-description"></p>
+        </div>
+        <footer class="unit-detail-footer">
+          <button
+            id="unit-detail-close"
+            type="button"
+            class="unit-detail-close"
+            aria-label="Close unit details"
+          >
+            Close
+          </button>
+        </footer>
+      </div>
+    </div>
     <div id="battle-modal" class="battle-modal" hidden aria-hidden="true">
       <div class="battle-dialog" role="dialog" aria-modal="true" aria-labelledby="battle-title">
         <header class="battle-header">
