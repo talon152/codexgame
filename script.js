@@ -23,7 +23,6 @@ import {
   phaseSummaryDisplay,
   sidebarPhaseBadge,
   advancePhaseButton,
-  cellUnitList,
   cellResourceList,
   buyUnitButton,
   moveUnitsButton,
@@ -179,6 +178,20 @@ const capitalSelectionState = {
   isActive: false,
   index: 0,
   error: "",
+};
+
+const TEMPLATE_IDS = {
+  JOY_GLEAM_WARDENS: "gleam-wardens",
+  JOY_SPARK_SCOUTS: "spark-scouts",
+  FEAR_DREAD_SENTRIES: "dread-sentries",
+  FEAR_PHANTOM_COURIERS: "phantom-couriers",
+  FEAR_TERROR_MANCERS: "terror-mancers",
+  FEAR_GLOOM_ANCHORS: "gloom-anchors",
+  ENVY_COVETOUS_RAIDERS: "covetous-raiders",
+  MIRROR_PIROUETTES: "mirror-pirouettes",
+  ENVY_GRUDGE_ARTILLERISTS: "grudge-artillerists",
+  ENVY_SIPHON_CORSAIRS: "siphon-corsairs",
+  ENVY_OBELISKS: "envy-obelisks",
 };
 
 const isCapitalSelectionActive = () => capitalSelectionState.isActive;
@@ -861,6 +874,44 @@ const applyStartPhaseRegeneration = () => {
     return;
   }
 
+  const resonanceMap = new Map();
+  boardUnits.forEach((units, key) => {
+    if (!Array.isArray(units) || units.length === 0) {
+      return;
+    }
+
+    const hasWardens = units.some(
+      (unit) =>
+        unit.factionId === faction.id &&
+        unit.templateId === TEMPLATE_IDS.JOY_GLEAM_WARDENS,
+    );
+
+    if (!hasWardens) {
+      return;
+    }
+
+    const [row, col] = key.split("-").map(Number);
+    if (!Number.isFinite(row) || !Number.isFinite(col)) {
+      return;
+    }
+
+    ORTHOGONAL_DIRECTIONS.forEach(({ dr, dc }) => {
+      const adjacentRow = row + dr;
+      const adjacentCol = col + dc;
+      if (
+        adjacentRow < 0 ||
+        adjacentRow >= GRID_SIZE ||
+        adjacentCol < 0 ||
+        adjacentCol >= GRID_SIZE
+      ) {
+        return;
+      }
+
+      const adjacentKey = getCellKey(adjacentRow, adjacentCol);
+      resonanceMap.set(adjacentKey, (resonanceMap.get(adjacentKey) ?? 0) + 1);
+    });
+  });
+
   const templatesById = new Map();
   const roster = unitRosters.get(faction.id);
   if (Array.isArray(roster)) {
@@ -869,7 +920,7 @@ const applyStartPhaseRegeneration = () => {
     });
   }
 
-  boardUnits.forEach((units) => {
+  boardUnits.forEach((units, key) => {
     units.forEach((unit) => {
       if (unit.factionId !== faction.id) {
         return;
@@ -905,6 +956,12 @@ const applyStartPhaseRegeneration = () => {
       const healAmount = Math.ceil(maxHp * 0.2);
       unit.stats.hp = Math.min(maxHp, currentHp + healAmount);
       unit.maxHp = maxHp;
+
+      const resonanceStacks = resonanceMap.get(key) ?? 0;
+      if (resonanceStacks > 0 && unit.stats.hp < maxHp) {
+        const bonus = Math.max(1, Math.round(maxHp * 0.1)) * resonanceStacks;
+        unit.stats.hp = Math.min(maxHp, unit.stats.hp + bonus);
+      }
     });
   });
 };
@@ -1614,6 +1671,235 @@ const applyTerrainModifiersToUnits = (units, terrainInfo) => {
   };
 };
 
+const applyBattleTraitEffects = ({
+  units,
+  getFactionName,
+  cellElement,
+}) => {
+  const allUnitsById = new Map(units.map((unit) => [unit.instanceId, unit]));
+  const originalStats = new Map();
+  const summaries = [];
+  const traitState = {
+    phantomCourierBuffed: new Set(),
+    spotlightTheftFactions: new Set(),
+  };
+
+  const adjustUnitStat = (unit, stat, delta) => {
+    if (!unit || typeof unit !== "object") {
+      return false;
+    }
+
+    const current = Number(unit.stats?.[stat]);
+    if (!Number.isFinite(current) || delta === 0) {
+      return false;
+    }
+
+    let unitRecord = originalStats.get(unit.instanceId);
+    if (!unitRecord) {
+      unitRecord = new Map();
+      originalStats.set(unit.instanceId, unitRecord);
+    }
+
+    if (!unitRecord.has(stat)) {
+      unitRecord.set(stat, current);
+    }
+
+    const nextValue = Math.max(0, current + delta);
+    unit.stats[stat] = nextValue;
+    return nextValue !== current;
+  };
+
+  const applyInitiativePenaltyFromSources = (templateId, label) => {
+    const factionsWithSources = new Set(
+      units
+        .filter((unit) => unit.templateId === templateId)
+        .map((unit) => unit.factionId),
+    );
+
+    factionsWithSources.forEach((factionId) => {
+      const affected = units.filter((unit) => unit.factionId !== factionId);
+      let adjustedCount = 0;
+      affected.forEach((unit) => {
+        if (adjustUnitStat(unit, "initiative", -1)) {
+          adjustedCount += 1;
+        }
+      });
+
+      if (adjustedCount > 0) {
+        summaries.push(
+          `${label}: ${getFactionName(factionId)} impose -1 INIT on ${adjustedCount} opposing unit${adjustedCount === 1 ? "" : "s"}.`,
+        );
+      }
+    });
+  };
+
+  applyInitiativePenaltyFromSources(
+    TEMPLATE_IDS.FEAR_DREAD_SENTRIES,
+    "Lingering Chill",
+  );
+  applyInitiativePenaltyFromSources(
+    TEMPLATE_IDS.FEAR_GLOOM_ANCHORS,
+    "Aura of Ominous Silence",
+  );
+
+  const raiders = units.filter(
+    (unit) => unit.templateId === TEMPLATE_IDS.ENVY_COVETOUS_RAIDERS,
+  );
+  raiders.forEach((raider) => {
+    const alliedSupport = units.some(
+      (candidate) =>
+        candidate.factionId === raider.factionId &&
+        candidate.instanceId !== raider.instanceId,
+    );
+    if (!alliedSupport) {
+      return;
+    }
+
+    const buffedStrength = adjustUnitStat(raider, "strength", 1);
+    const buffedDefence = adjustUnitStat(raider, "defence", 1);
+
+    if (buffedStrength || buffedDefence) {
+      summaries.push(
+        `Stolen Edge empowers ${raider.name} with +1 STR/+1 DEF while fighting alongside allies.`,
+      );
+    }
+  });
+
+  const revert = () => {
+    originalStats.forEach((statsMap, unitId) => {
+      const unit = allUnitsById.get(unitId);
+      if (!unit) {
+        return;
+      }
+
+      statsMap.forEach((value, stat) => {
+        unit.stats[stat] = value;
+      });
+    });
+  };
+
+  const onAttack = ({ attacker, target }) => {
+    if (!attacker) {
+      return;
+    }
+
+    if (attacker.templateId === TEMPLATE_IDS.FEAR_TERROR_MANCERS && target) {
+      if (adjustUnitStat(target, "initiative", -1)) {
+        appendBattleLog(
+          `Piercing Whispers rattle ${target.name}, reducing initiative by 1.`,
+        );
+      }
+    }
+
+    if (attacker.templateId === TEMPLATE_IDS.FEAR_PHANTOM_COURIERS) {
+      if (!traitState.phantomCourierBuffed.has(attacker.instanceId)) {
+        if (adjustUnitStat(attacker, "defence", 1)) {
+          traitState.phantomCourierBuffed.add(attacker.instanceId);
+          appendBattleLog(
+            `${attacker.name} slip into the mist, gaining +1 DEF for the clash.`,
+          );
+        }
+      }
+    }
+
+    if (attacker.templateId === TEMPLATE_IDS.ENVY_GRUDGE_ARTILLERISTS) {
+      if (!traitState.spotlightTheftFactions.has(attacker.factionId)) {
+        traitState.spotlightTheftFactions.add(attacker.factionId);
+        adjustFactionResources(attacker.factionId, { inspiration: 1 });
+        appendBattleLog(
+          `Spotlight Theft awards ${getFactionName(attacker.factionId)} +1 inspiration.`,
+        );
+      }
+    }
+  };
+
+  const onUnitDefeated = (target, { attackSummaries }) => {
+    if (!target || !Array.isArray(attackSummaries)) {
+      return;
+    }
+
+    const contributingAttacks = attackSummaries.filter(
+      (entry) => entry.target === target,
+    );
+    const finisher = contributingAttacks[contributingAttacks.length - 1];
+
+    if (
+      finisher?.attacker?.templateId === TEMPLATE_IDS.MIRROR_PIROUETTES &&
+      adjustUnitStat(finisher.attacker, "attack", 1)
+    ) {
+      appendBattleLog(
+        `${finisher.attacker.name} imitate their fallen foe, gaining +1 ATK for the remainder of the battle.`,
+      );
+    }
+  };
+
+  const onBattleComplete = ({
+    survivors,
+    winningFactionIds,
+    defeatedFactionIds,
+  }) => {
+    if (!Array.isArray(survivors)) {
+      return;
+    }
+
+    const survivorByFaction = (factionId, templateId) =>
+      survivors.some(
+        (unit) =>
+          unit.factionId === factionId && unit.templateId === templateId,
+      );
+
+    const uniqueWinningFactions = Array.isArray(winningFactionIds)
+      ? [...new Set(winningFactionIds)]
+      : [];
+
+    uniqueWinningFactions.forEach((factionId) => {
+      if (
+        survivorByFaction(factionId, TEMPLATE_IDS.JOY_SPARK_SCOUTS)
+      ) {
+        adjustFactionResources(factionId, { inspiration: 1 });
+        appendBattleLog(
+          `Bottled Sunshine lets ${getFactionName(
+            factionId,
+          )} bank +1 inspiration after the victory.`,
+        );
+      }
+
+      if (survivorByFaction(factionId, TEMPLATE_IDS.ENVY_SIPHON_CORSAIRS)) {
+        const defeated = Array.isArray(defeatedFactionIds)
+          ? [...defeatedFactionIds]
+          : [];
+        for (const enemyId of defeated) {
+          const resources = getFactionResources(enemyId);
+          if ((resources?.inspiration ?? 0) > 0) {
+            adjustFactionResources(enemyId, { inspiration: -1 });
+            adjustFactionResources(factionId, { inspiration: 1 });
+            appendBattleLog(
+              `Credit Hoarders seize 1 inspiration from ${getFactionName(
+                enemyId,
+              )}.`,
+            );
+            break;
+          }
+        }
+      }
+
+      if (survivorByFaction(factionId, TEMPLATE_IDS.ENVY_OBELISKS)) {
+        const resources = getResourcesForCellElement(cellElement);
+        if ((resources?.inspiration ?? 0) > 0) {
+          adjustFactionResources(factionId, { will: 1 });
+          appendBattleLog(
+            `Transmute Longing converts captured inspiration into +1 will for ${getFactionName(
+              factionId,
+            )}.`,
+          );
+        }
+      }
+    });
+  };
+
+  return { revert, summaries, onAttack, onUnitDefeated, onBattleComplete };
+};
+
 const openBattleModal = ({
   row,
   col,
@@ -1824,6 +2110,7 @@ const runBattleForCell = async ({ row, col, units }) => {
 
   const terrainInfo = getCellTerrainInfo(row, col);
   const terrainLabel = terrainInfo?.label ?? null;
+  const cellElement = getCellElementAt(row, col);
 
   openBattleModal({
     row,
@@ -1835,6 +2122,11 @@ const runBattleForCell = async ({ row, col, units }) => {
 
   const { revert: revertTerrainModifiers, summaries: terrainSummaries } =
     applyTerrainModifiersToUnits(units, terrainInfo);
+  const traitRuntime = applyBattleTraitEffects({
+    units,
+    getFactionName: (id) => getFactionById(id)?.name ?? id,
+    cellElement,
+  });
 
   const unitElements = new Map();
 
@@ -1859,6 +2151,9 @@ const runBattleForCell = async ({ row, col, units }) => {
     appendBattleLog(`The clash erupts on the ${terrainLabel}.`);
   }
   terrainSummaries.forEach((summary) => {
+    appendBattleLog(summary);
+  });
+  traitRuntime?.summaries?.forEach((summary) => {
     appendBattleLog(summary);
   });
 
@@ -1935,6 +2230,7 @@ const runBattleForCell = async ({ row, col, units }) => {
         appendBattleLog(
           `${attacker.name} strikes ${target.name} for ${damage} damage.`,
         );
+        traitRuntime?.onAttack?.({ attacker, target, damage });
       });
 
       if (attackSummaries.length > 0) {
@@ -1946,6 +2242,7 @@ const runBattleForCell = async ({ row, col, units }) => {
         updateUnitHpDisplay(target);
         if (target.stats.hp <= 0) {
           appendBattleLog(`${target.name} has been defeated.`);
+          traitRuntime?.onUnitDefeated?.(target, { attackSummaries });
         }
       });
 
@@ -1976,14 +2273,29 @@ const runBattleForCell = async ({ row, col, units }) => {
 
   appendBattleLog(outcomeMessage);
 
+  const survivors = units.filter((unit) => unit.stats.hp > 0);
+  const survivingFactionIds = new Set(survivors.map((unit) => unit.factionId));
+  const defeatedFactionIds = uniqueFactionIds.filter(
+    (id) => !survivingFactionIds.has(id),
+  );
+
+  let winningFactionIds = [];
+  if (topAlive && !bottomAlive) {
+    winningFactionIds = [topFactionId];
+  } else if (!topAlive && bottomAlive) {
+    winningFactionIds = [...bottomFactionIds];
+  }
+
+  traitRuntime?.onBattleComplete?.({
+    survivors,
+    winningFactionIds,
+    defeatedFactionIds,
+  });
+
+  traitRuntime?.revert?.();
   revertTerrainModifiers();
 
-  const survivors = units.filter((unit) => unit.stats.hp > 0);
   setUnitsForCell(row, col, survivors);
-
-  const cellElement = mapGrid.querySelector(
-    `[data-row="${row}"][data-col="${col}"]`,
-  );
   if (cellElement) {
     updateCellUnitStack(cellElement, survivors);
   }
@@ -2521,7 +2833,7 @@ const toggleUnitSelection = (unitId, { element, button } = {}) => {
   }
 
   if (element) {
-    element.classList.toggle("is-selected", !isSelected);
+    element.classList.toggle("province-unit-card--selected", !isSelected);
   }
 
   if (button) {
@@ -2605,6 +2917,15 @@ const renderProvinceUnitList = (cell, units = null) => {
   const provinceSummary = buildProvinceSummary(cell, row, col);
   const provinceUnits = Array.isArray(units) ? units : getUnitsForCell(row, col);
 
+  const validUnitIds = new Set(provinceUnits.map((unit) => unit.instanceId));
+  Array.from(selectedUnitIds).forEach((unitId) => {
+    if (!validUnitIds.has(unitId)) {
+      selectedUnitIds.delete(unitId);
+    }
+  });
+
+  const activeFaction = getActiveFaction();
+
   if (provinceUnitSummary) {
     if (provinceUnits.length > 0) {
       const unitCountLabel =
@@ -2628,6 +2949,19 @@ const renderProvinceUnitList = (cell, units = null) => {
   provinceUnits.forEach((unit) => {
     const card = document.createElement("li");
     card.className = "province-unit-card";
+    card.dataset.unitId = unit.instanceId;
+
+    const isFriendly =
+      Boolean(activeFaction) && unit.factionId === activeFaction.id;
+    const isSelected = selectedUnitIds.has(unit.instanceId);
+
+    if (isFriendly) {
+      card.classList.add("province-unit-card--selectable");
+    }
+
+    if (isSelected) {
+      card.classList.add("province-unit-card--selected");
+    }
 
     const header = document.createElement("div");
     header.className = "province-unit-card__header";
@@ -2636,6 +2970,35 @@ const renderProvinceUnitList = (cell, units = null) => {
     name.className = "province-unit-card__name";
     name.textContent = unit.name ?? "Unknown unit";
     header.appendChild(name);
+
+    const controls = document.createElement("div");
+    controls.className = "province-unit-card__controls";
+
+    if (isFriendly) {
+      const selectButton = document.createElement("button");
+      selectButton.type = "button";
+      selectButton.className = "province-unit-card__select";
+      selectButton.textContent = isSelected ? "Selected" : "Select";
+
+      const handleToggle = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleUnitSelection(unit.instanceId, {
+          element: card,
+          button: selectButton,
+        });
+      };
+
+      selectButton.addEventListener("click", handleToggle);
+      card.addEventListener("click", (event) => {
+        if (event.target.closest(".province-unit-card__details")) {
+          return;
+        }
+        handleToggle(event);
+      });
+
+      controls.appendChild(selectButton);
+    }
 
     const detailsButton = document.createElement("button");
     detailsButton.type = "button";
@@ -2651,7 +3014,8 @@ const renderProvinceUnitList = (cell, units = null) => {
     detailsIcon.textContent = "ⓘ";
     detailsButton.appendChild(detailsIcon);
 
-    header.appendChild(detailsButton);
+    controls.appendChild(detailsButton);
+    header.appendChild(controls);
     card.appendChild(header);
 
     const metaRow = document.createElement("div");
@@ -2691,7 +3055,9 @@ const renderProvinceUnitList = (cell, units = null) => {
       card.appendChild(statsRow);
     }
 
-    detailsButton.addEventListener("click", () => {
+    detailsButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       openUnitDetailModal(unit, {
         trigger: detailsButton,
         location: provinceSummary,
@@ -2738,99 +3104,11 @@ const renderCellResourceList = (cell) => {
   });
 };
 
-const renderCellUnitList = (row, col) => {
-  cellUnitList.innerHTML = "";
-  const units = getUnitsForCell(row, col);
-
-  if (units.length === 0) {
-    const emptyItem = document.createElement("li");
-    emptyItem.className = "unit-empty";
-    emptyItem.textContent = "No units assigned.";
-    cellUnitList.appendChild(emptyItem);
-    return;
-  }
-
-  const validIds = new Set(units.map((unit) => unit.instanceId));
-  Array.from(selectedUnitIds).forEach((unitId) => {
-    if (!validIds.has(unitId)) {
-      selectedUnitIds.delete(unitId);
-    }
-  });
-
-  units.forEach((unit) => {
-    const faction = getFactionById(unit.factionId);
-    const listItem = document.createElement("li");
-    listItem.className = "unit-card";
-    listItem.dataset.unitId = unit.instanceId;
-
-    const isSelected = selectedUnitIds.has(unit.instanceId);
-    if (isSelected) {
-      listItem.classList.add("is-selected");
-    }
-
-    const header = document.createElement("div");
-    header.className = "unit-card__header";
-
-    const nameLabel = document.createElement("span");
-    nameLabel.className = "unit-name";
-    nameLabel.textContent = unit.name;
-    header.appendChild(nameLabel);
-
-    const selectButton = document.createElement("button");
-    selectButton.type = "button";
-    selectButton.className = "unit-card__select";
-    selectButton.textContent = isSelected ? "Selected" : "Select";
-    header.appendChild(selectButton);
-    listItem.appendChild(header);
-
-    if (unit.role) {
-      const roleLabel = document.createElement("span");
-      roleLabel.className = "unit-role";
-      roleLabel.textContent = unit.role;
-      listItem.appendChild(roleLabel);
-    }
-
-    const factionLabel = document.createElement("span");
-    factionLabel.className = "unit-meta";
-    factionLabel.textContent = faction ? faction.name : unit.factionId;
-    listItem.appendChild(factionLabel);
-
-    const statsRow = createUnitStatsRow(unit.stats);
-    listItem.appendChild(statsRow);
-
-    if (unit.description) {
-      const description = document.createElement("span");
-      description.className = "unit-description";
-      description.textContent = unit.description;
-      listItem.appendChild(description);
-    }
-
-    const toggle = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      toggleUnitSelection(unit.instanceId, {
-        element: listItem,
-        button: selectButton,
-      });
-    };
-
-    selectButton.addEventListener("click", toggle);
-    listItem.addEventListener("click", toggle);
-
-    cellUnitList.appendChild(listItem);
-  });
-};
-
 const renderSelectedCellDetails = (cell) => {
   if (!cell) {
     selectedCellDisplay.textContent = "None";
     renderCellResourceList(null);
     renderProvinceUnitList(null);
-    cellUnitList.innerHTML = "";
-    const promptItem = document.createElement("li");
-    promptItem.className = "unit-empty";
-    promptItem.textContent = "Select a cell to manage forces.";
-    cellUnitList.appendChild(promptItem);
     resetMovementState();
     closeUnitModal();
     closeUnitDetailModal();
@@ -2846,7 +3124,6 @@ const renderSelectedCellDetails = (cell) => {
     selectedCellDisplay.textContent = "None";
     renderCellResourceList(null);
     renderProvinceUnitList(null);
-    cellUnitList.innerHTML = "";
     resetMovementState();
     selectedUnitIds.clear();
     lastRenderedCellKey = null;
@@ -2893,7 +3170,6 @@ const renderSelectedCellDetails = (cell) => {
   renderProvinceUnitList(cell, units);
   renderCellResourceList(cell);
   updateCellUnitStack(cell, units);
-  renderCellUnitList(row, col);
   updateActionButtonsAvailability();
   refreshSelectionStatus();
 };
