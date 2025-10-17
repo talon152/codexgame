@@ -220,6 +220,10 @@ body.modal-open {
   background-color: rgba(255, 255, 255, 0.65);
   border-radius: 8px;
   border: 1px solid rgba(29, 53, 87, 0.3);
+  --capital-border: rgba(230, 57, 70, 0.7);
+  --capital-glow: rgba(230, 57, 70, 0.35);
+  --capital-badge-bg: rgba(230, 57, 70, 0.85);
+  --capital-badge-text: #fff5f5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,8 +241,8 @@ body.modal-open {
 }
 
 .cell--capital {
-  border-color: rgba(230, 57, 70, 0.7);
-  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.35);
+  border-color: var(--capital-border);
+  box-shadow: 0 0 0 2px var(--capital-glow);
 }
 
 .cell--owned {
@@ -250,8 +254,8 @@ body.modal-open {
 }
 
 .cell--capital.cell--owned {
-  border-color: rgba(230, 57, 70, 0.7);
-  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.35),
+  border-color: var(--capital-border);
+  box-shadow: 0 0 0 2px var(--capital-glow),
     inset 0 0 0 2px var(--owner-glow);
 }
 
@@ -269,36 +273,60 @@ body.modal-open {
   --owner-overlay: rgba(255, 255, 255, 0.3);
   --owner-border: rgba(255, 255, 255, 0.55);
   --owner-glow: rgba(255, 255, 255, 0.35);
+  --capital-border: rgba(255, 255, 255, 0.7);
+  --capital-glow: rgba(255, 255, 255, 0.4);
+  --capital-badge-bg: rgba(255, 255, 255, 0.85);
+  --capital-badge-text: #1b1b1b;
 }
 
 .cell--owner-sun {
   --owner-overlay: rgba(255, 196, 0, 0.42);
   --owner-border: rgba(255, 196, 0, 0.8);
   --owner-glow: rgba(255, 196, 0, 0.55);
+  --capital-border: rgba(255, 196, 0, 0.85);
+  --capital-glow: rgba(255, 196, 0, 0.55);
+  --capital-badge-bg: rgba(255, 196, 0, 0.95);
+  --capital-badge-text: #3d2a00;
 }
 
 .cell--owner-moon {
   --owner-overlay: rgba(108, 99, 255, 0.4);
   --owner-border: rgba(108, 99, 255, 0.75);
   --owner-glow: rgba(108, 99, 255, 0.5);
+  --capital-border: rgba(108, 99, 255, 0.85);
+  --capital-glow: rgba(108, 99, 255, 0.55);
+  --capital-badge-bg: rgba(108, 99, 255, 0.9);
+  --capital-badge-text: #f5f3ff;
 }
 
 .cell--owner-ember {
   --owner-overlay: rgba(230, 82, 65, 0.42);
   --owner-border: rgba(230, 82, 65, 0.78);
   --owner-glow: rgba(230, 82, 65, 0.52);
+  --capital-border: rgba(230, 82, 65, 0.85);
+  --capital-glow: rgba(230, 82, 65, 0.55);
+  --capital-badge-bg: rgba(230, 82, 65, 0.9);
+  --capital-badge-text: #fff5f2;
 }
 
 .cell--owner-tide {
   --owner-overlay: rgba(56, 162, 173, 0.38);
   --owner-border: rgba(56, 162, 173, 0.75);
   --owner-glow: rgba(56, 162, 173, 0.48);
+  --capital-border: rgba(56, 162, 173, 0.85);
+  --capital-glow: rgba(56, 162, 173, 0.55);
+  --capital-badge-bg: rgba(56, 162, 173, 0.92);
+  --capital-badge-text: #002b32;
 }
 
 .cell--owner-independent {
   --owner-overlay: rgba(128, 128, 128, 0.36);
   --owner-border: rgba(128, 128, 128, 0.65);
   --owner-glow: rgba(128, 128, 128, 0.42);
+  --capital-border: rgba(128, 128, 128, 0.75);
+  --capital-glow: rgba(128, 128, 128, 0.45);
+  --capital-badge-bg: rgba(128, 128, 128, 0.85);
+  --capital-badge-text: #f7f7f7;
 }
 
 .cell--movement-target {
@@ -350,8 +378,8 @@ body.modal-open {
   justify-content: center;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: rgba(230, 57, 70, 0.85);
-  color: #fff5f5;
+  background: var(--capital-badge-bg);
+  color: var(--capital-badge-text);
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
