@@ -10,7 +10,18 @@
     <main class="layout">
       <section class="board-panel" aria-label="Game board">
         <header class="panel-header">
-          <h1 class="app-title">Codex Strategy Prototype</h1>
+          <div class="turn-status" role="status" aria-live="polite">
+            <div class="turn-status__primary">
+              <span
+                id="current-faction"
+                class="faction-badge"
+                aria-live="polite"
+              ></span>
+              <p id="turn-counter" class="turn-counter"></p>
+            </div>
+            <p id="phase-name" class="phase-name"></p>
+            <p id="phase-summary" class="phase-summary"></p>
+          </div>
           <button
             id="help-button"
             type="button"
@@ -35,15 +46,9 @@
       <aside class="sidebar" aria-live="polite">
         <section class="turn-panel" aria-label="Turn details">
           <h2>Turn Sequence</h2>
-          <div class="turn-header">
-            <span
-              id="current-faction"
-              class="faction-badge"
-              role="status"
-              aria-live="polite"
-            ></span>
-            <p id="turn-counter" class="turn-counter"></p>
-          </div>
+          <p class="turn-panel__intro">
+            Review the sequence of phases and advance when you're ready.
+          </p>
           <div class="resource-summary" aria-live="polite">
             <p class="resource-summary__title">Resources</p>
             <div class="resource-summary__row">
@@ -65,8 +70,6 @@
               </span>
             </div>
           </div>
-          <p id="phase-name" class="phase-name"></p>
-          <p id="phase-summary" class="phase-summary"></p>
           <ol id="phase-list" class="phase-list" aria-label="Phases this turn"></ol>
           <button id="advance-phase" type="button" class="next-turn-button">
             Next Phase

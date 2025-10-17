@@ -46,21 +46,31 @@ body.modal-open {
 
 .panel-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-bottom: 1.25rem;
 }
 
-.app-title {
-  margin: 0 0 1rem;
-  color: var(--primary);
-  text-align: center;
+.turn-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
-.panel-header .app-title {
+.turn-status__primary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.turn-panel__intro {
   margin: 0;
-  text-align: left;
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .help-button {
@@ -409,14 +419,6 @@ body.modal-open {
   gap: 0.75rem;
 }
 
-.turn-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
 .faction-badge {
   display: inline-flex;
   align-items: center;
@@ -459,6 +461,7 @@ body.modal-open {
   font-weight: 600;
   color: var(--primary);
   font-size: 0.95rem;
+  margin: 0;
 }
 
 .resource-summary {
@@ -1681,8 +1684,8 @@ body.modal-open {
     gap: 0.75rem;
   }
 
-  .panel-header .app-title {
-    text-align: left;
+  .turn-status {
+    width: 100%;
   }
 
   .help-button {
