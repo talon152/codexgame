@@ -388,8 +388,13 @@ body.modal-open {
 }
 
 .cell-terrain {
-  display: block;
+  display: none;
   text-align: center;
+  padding: 0 0.3rem;
+}
+
+.map-grid--show-terrain-labels .cell-terrain {
+  display: block;
 }
 
 .cell-unit-stack {
@@ -1489,6 +1494,47 @@ body.modal-open {
 .help-panel em {
   font-style: normal;
   color: var(--accent);
+}
+
+.terrain-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.terrain-legend__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.terrain-legend__grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.terrain-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.terrain-legend__swatch {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid rgba(17, 33, 54, 0.2);
+  box-shadow: 0 6px 16px rgba(17, 33, 54, 0.18);
+}
+
+.terrain-legend__label {
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .battle-modal {

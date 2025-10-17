@@ -130,12 +130,16 @@ const DEFAULT_SELECTION_MESSAGE =
   selectionGuidance?.textContent?.trim() ?? "Select a cell to manage forces.";
 
 const applyOverlaySelection = (value) => {
-  const overlay = value === "resources" ? "resources" : "none";
+  const overlay = value ?? "none";
   if (!mapGrid) {
     return;
   }
 
   mapGrid.classList.toggle("map-grid--show-resources", overlay === "resources");
+  mapGrid.classList.toggle(
+    "map-grid--show-terrain-labels",
+    overlay === "province-types",
+  );
 };
 
 const UNIT_STAT_LABELS = [
@@ -2984,6 +2988,7 @@ const createCell = (row, col) => {
   const terrainLabel = document.createElement("span");
   terrainLabel.className = "cell-terrain";
   terrainLabel.textContent = terrain.label;
+  terrainLabel.setAttribute("aria-hidden", "true");
 
   const unitStack = document.createElement("span");
   unitStack.className = "cell-unit-stack";
