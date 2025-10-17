@@ -11,41 +11,41 @@ export const TERRAIN_TYPES = [
 
 export const TERRAIN_RESOURCE_RULES = {
   forest: {
-    gold: { min: 1, max: 2 },
-    metal: { min: 1, max: 2 },
+    inspiration: { min: 1, max: 2 },
+    will: { min: 1, max: 2 },
   },
   plain: {
-    gold: { min: 2, max: 4 },
-    metal: { min: 0, max: 1 },
+    inspiration: { min: 2, max: 4 },
+    will: { min: 0, max: 1 },
   },
   village: {
-    gold: { min: 3, max: 5 },
-    metal: { min: 1, max: 2 },
+    inspiration: { min: 3, max: 5 },
+    will: { min: 1, max: 2 },
   },
   mountain: {
-    gold: { min: 0, max: 1 },
-    metal: { min: 3, max: 5 },
+    inspiration: { min: 0, max: 1 },
+    will: { min: 3, max: 5 },
   },
   swamp: {
-    gold: { min: 1, max: 3 },
-    metal: { min: 0, max: 1 },
+    inspiration: { min: 1, max: 3 },
+    will: { min: 0, max: 1 },
   },
   water: {
-    gold: { min: 1, max: 2 },
-    metal: { min: 0, max: 0 },
+    inspiration: { min: 1, max: 2 },
+    will: { min: 0, max: 0 },
   },
 };
 
 export const RESOURCE_TYPES = [
-  { key: "gold", label: "Gold" },
-  { key: "metal", label: "Metal" },
+  { key: "inspiration", label: "Inspiration" },
+  { key: "will", label: "Will" },
 ];
 
 export const CAPITAL_PRODUCTION = {
-  sun: { gold: 4, metal: 1 },
-  moon: { gold: 3, metal: 2 },
-  ember: { gold: 2, metal: 3 },
-  tide: { gold: 3, metal: 1 },
+  joy: { inspiration: 4, will: 1 },
+  fear: { inspiration: 3, will: 2 },
+  anger: { inspiration: 2, will: 3 },
+  envy: { inspiration: 3, will: 1 },
 };
 
 export const UNIT_STAT_LABELS = [

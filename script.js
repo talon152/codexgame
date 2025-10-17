@@ -28,8 +28,8 @@ import {
   buyUnitButton,
   moveUnitsButton,
   selectionGuidance,
-  resourceGoldDisplay,
-  resourceMetalDisplay,
+  resourceInspirationDisplay,
+  resourceWillDisplay,
   capitalGuidance,
   provinceUnitList,
   provinceUnitSummary,
@@ -137,14 +137,16 @@ const setSelectionGuidance = (message = DEFAULT_SELECTION_MESSAGE) => {
 
 const updateResourceDisplay = () => {
   const faction = getActiveFaction();
-  const resources = faction ? getFactionResources(faction.id) : { gold: 0, metal: 0 };
+  const resources = faction
+    ? getFactionResources(faction.id)
+    : { inspiration: 0, will: 0 };
 
-  if (resourceGoldDisplay) {
-    resourceGoldDisplay.textContent = `Gold: ${resources.gold}`;
+  if (resourceInspirationDisplay) {
+    resourceInspirationDisplay.textContent = `Inspiration: ${resources.inspiration}`;
   }
 
-  if (resourceMetalDisplay) {
-    resourceMetalDisplay.textContent = `Metal: ${resources.metal}`;
+  if (resourceWillDisplay) {
+    resourceWillDisplay.textContent = `Will: ${resources.will}`;
   }
 };
 
@@ -161,10 +163,10 @@ const provinceOwners = new Map();
 
 const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
 const OWNER_CLASS_BY_FACTION = new Map([
-  ["sun", "cell--owner-sun"],
-  ["moon", "cell--owner-moon"],
-  ["ember", "cell--owner-ember"],
-  ["tide", "cell--owner-tide"],
+  ["joy", "cell--owner-joy"],
+  ["fear", "cell--owner-fear"],
+  ["anger", "cell--owner-anger"],
+  ["envy", "cell--owner-envy"],
   [INDEPENDENT_FACTION_ID, "cell--owner-independent"],
 ]);
 
@@ -825,7 +827,7 @@ const applyArmySelection = (armyIds) => {
 
   selectedArmies.forEach((army) => {
     unitRosters.set(army.faction.id, Array.isArray(army.roster) ? army.roster : []);
-    setFactionResources(army.faction.id, { gold: 0, metal: 0 });
+    setFactionResources(army.faction.id, { inspiration: 0, will: 0 });
   });
 
   turnState.turnNumber = 1;
@@ -934,8 +936,8 @@ const collectTerritoryIncomeForActiveFaction = () => {
     return null;
   }
 
-  let totalGold = 0;
-  let totalMetal = 0;
+  let totalInspiration = 0;
+  let totalWill = 0;
 
   provinceOwners.forEach((ownerId, key) => {
     if (ownerId !== faction.id) {
@@ -956,16 +958,19 @@ const collectTerritoryIncomeForActiveFaction = () => {
     }
 
     const resources = getResourcesForCellElement(cell);
-    totalGold += resources.gold ?? 0;
-    totalMetal += resources.metal ?? 0;
+    totalInspiration += resources.inspiration ?? 0;
+    totalWill += resources.will ?? 0;
   });
 
-  if (totalGold === 0 && totalMetal === 0) {
+  if (totalInspiration === 0 && totalWill === 0) {
     return null;
   }
 
-  adjustFactionResources(faction.id, { gold: totalGold, metal: totalMetal });
-  return { gold: totalGold, metal: totalMetal };
+  adjustFactionResources(faction.id, {
+    inspiration: totalInspiration,
+    will: totalWill,
+  });
+  return { inspiration: totalInspiration, will: totalWill };
 };
 
 const runStartPhase = () => {
@@ -986,11 +991,11 @@ const runStartPhase = () => {
 
     if (capitalProduction) {
       const capitalParts = [];
-      if (capitalProduction.gold > 0) {
-        capitalParts.push(`${capitalProduction.gold} gold`);
+      if (capitalProduction.inspiration > 0) {
+        capitalParts.push(`${capitalProduction.inspiration} inspiration`);
       }
-      if (capitalProduction.metal > 0) {
-        capitalParts.push(`${capitalProduction.metal} metal`);
+      if (capitalProduction.will > 0) {
+        capitalParts.push(`${capitalProduction.will} will`);
       }
       if (capitalParts.length > 0) {
         summaryParts.push(`Capital yields ${capitalParts.join(" and ")}.`);
@@ -999,11 +1004,13 @@ const runStartPhase = () => {
 
     if (territoryProduction) {
       const territoryParts = [];
-      if (territoryProduction.gold > 0) {
-        territoryParts.push(`${territoryProduction.gold} gold`);
+      if (territoryProduction.inspiration > 0) {
+        territoryParts.push(
+          `${territoryProduction.inspiration} inspiration`,
+        );
       }
-      if (territoryProduction.metal > 0) {
-        territoryParts.push(`${territoryProduction.metal} metal`);
+      if (territoryProduction.will > 0) {
+        territoryParts.push(`${territoryProduction.will} will`);
       }
       if (territoryParts.length > 0) {
         summaryParts.push(

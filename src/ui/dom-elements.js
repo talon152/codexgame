@@ -11,8 +11,10 @@ export const cellResourceList = document.getElementById("cell-resource-list");
 export const buyUnitButton = document.getElementById("buy-unit-button");
 export const moveUnitsButton = document.getElementById("move-units-button");
 export const selectionGuidance = document.getElementById("selection-guidance");
-export const resourceGoldDisplay = document.getElementById("resource-gold");
-export const resourceMetalDisplay = document.getElementById("resource-metal");
+export const resourceInspirationDisplay = document.getElementById(
+  "resource-inspiration",
+);
+export const resourceWillDisplay = document.getElementById("resource-will");
 export const capitalGuidance = document.getElementById("capital-guidance");
 export const provinceUnitList = document.getElementById("province-unit-list");
 export const provinceUnitSummary = document.getElementById("province-unit-summary");

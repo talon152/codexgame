@@ -1,221 +1,221 @@
 export const INDEPENDENT_FACTION = {
   id: "independent",
-  name: "Independent Forces",
+  name: "Neutral Echoes",
   summary:
-    "Neutral warbands that defend their own holdings until commanders claim them.",
+    "Autonomous manifestations of memory that defend neglected mindscapes until a new emotion integrates them.",
 };
 
 export const INDEPENDENT_UNITS = [
   {
-    id: "free-lance-warden",
-    name: "Free-Lance Warden",
-    role: "Shielded infantry",
+    id: "memory-bulwark",
+    name: "Memory Bulwark",
+    role: "Anchored sentinel",
     description:
-      "Veteran defenders who brace behind tower shields, gaining +2 DEF on mountain passes.",
+      "Stoic guardians of long-held beliefs, gaining +2 DEF on mountain ridges where convictions feel unshakeable.",
     detail:
-      "Wardens hold chokepoints while negotiators parley, buying time for commanders to maneuver.",
+      "They brace crumbling ramparts of thought, letting warring sentiments negotiate without shattering the past outright.",
     traits: [
-      "Holds the Line: Soaks attacks with balanced stats and reinforced shields.",
-      "Rockstead Resolve: Mountain footing adds +2 DEF as they leverage natural cover.",
+      "Unflinching Recall: Balanced stats let them weather most frontal assaults.",
+      "Bedrock Resolve: Mountain footing adds +2 DEF as they root themselves in certainty.",
     ],
     terrainModifiers: {
       mountain: { defence: 2 },
     },
     stats: { strength: 6, attack: 5, defence: 6, hp: 18, initiative: 5, movement: 3 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "amber-ranger",
-    name: "Amber Ranger",
+    id: "glimmer-tracker",
+    name: "Glimmer Tracker",
     role: "Forest archer",
     description:
-      "Hunters who strike from treetops, gaining +2 ATK and +1 INIT when fighting in forests.",
+      "Hunters of fleeting optimism that gain +2 ATK and +1 INIT when stalking the wooded paths of nostalgia.",
     detail:
-      "They guide caravans through the wilds in exchange for supplies and mutual defense pacts.",
+      "They follow sparks of joy through tangled recollections, guiding them toward whichever emotion proves worthy.",
     traits: [
-      "Treetop Volley: Rain arrows from the canopy with deadly accuracy.",
-      "Swift Retreat: Elevated vantage grants +1 INIT in forests.",
+      "Hopeful Volley: Radiant arrows pierce even armored doubts.",
+      "Quick Rekindle: Forest cover grants +1 INIT as they dart between memories.",
     ],
     terrainModifiers: {
       forest: { attack: 2, initiative: 1 },
     },
     stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7, movement: 4 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "river-ward-scout",
-    name: "River Ward Scout",
+    id: "tide-messenger",
+    name: "Tide Messenger",
     role: "Swamp skirmisher",
     description:
-      "Guides that treat swamps as home turf, gaining +2 INIT when engaged on wetlands or water.",
+      "Guides who treat subconscious wetlands as open roads, gaining +2 INIT on swamps and water.",
     detail:
-      "They ferry information between isolated hamlets, striking at invaders who ignore their warnings.",
+      "They ferry warnings through murky emotions, striking intruders before slipping beneath the surface of awareness.",
     traits: [
-      "Bog Runner: Moves effortlessly through mud and reeds.",
-      "Ambush Signal: Alerts nearby allies with quick strikes before slipping away.",
+      "Bog Dash: Moves effortlessly through stagnant worries.",
+      "Wake Ripple: Alerts allies with sudden strikes before vanishing.",
     ],
     terrainModifiers: {
       swamp: { initiative: 2 },
       water: { initiative: 2 },
     },
     stats: { strength: 4, attack: 5, defence: 3, hp: 12, initiative: 8, movement: 5 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "stonebreaker-ogre",
-    name: "Stonebreaker Ogre",
+    id: "catharsis-golem",
+    name: "Catharsis Golem",
     role: "Siege bruiser",
     description:
-      "A hulking mercenary that shatters defenses with 9 STR, but is sluggish to react.",
+      "A hulking release of bottled rage that crushes barriers with 9 STR yet lumbers with low initiative.",
     detail:
-      "Local clans hire the ogre to dismantle rival fortifications in exchange for tribute.",
+      "Communities conjure the golem to break through blockages of thought, trading tribute for a path toward relief.",
     traits: [
-      "Crushing Blows: High STR turns every swing into a potential breach.",
-      "Lumbering Form: Low INIT leaves openings for faster foes.",
+      "Shattering Release: High STR converts pressure into irresistible blows.",
+      "Heavy Catharsis: Slow reactions leave gaps for quicker adversaries.",
     ],
     stats: { strength: 9, attack: 7, defence: 4, hp: 22, initiative: 3, movement: 2 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "dawnshield-zealot",
-    name: "Dawnshield Zealot",
-    role: "Sacred guardian",
+    id: "conviction-keeper",
+    name: "Conviction Keeper",
+    role: "Sanctuary guardian",
     description:
-      "Fanatics that fortify villages, granting +2 DEF when defending settlements.",
+      "Watchers who safeguard communal promises, granting +2 DEF when defending villages of shared intent.",
     detail:
-      "They uphold local pacts, refusing to yield shrines to any faction they deem unworthy.",
+      "They judge which emotions may draw power from a settlement, shielding it from manipulative whispers until consensus forms.",
     traits: [
-      "Radiant Bulwark: Shields glimmer against direct assaults.",
-      "Sanctified Ground: Villages empower their divine wards.",
+      "Unbroken Vows: Stout shields repel corrosive guilt.",
+      "Hearthstone Ward: Villages empower their protective sigils.",
     ],
     terrainModifiers: {
       village: { defence: 2 },
     },
     stats: { strength: 6, attack: 6, defence: 6, hp: 16, initiative: 6, movement: 3 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "ashen-trackers",
-    name: "Ashen Trackers",
+    id: "impulse-riders",
+    name: "Impulse Riders",
     role: "Wasteland outriders",
     description:
-      "Pairs of scouts who excel on plains, adding +1 ATK and +1 INIT in open ground.",
+      "Pairs of thrillseekers who race across open plains, adding +1 ATK and +1 INIT when charging through exposed thoughts.",
     detail:
-      "Trackers read battlefield signs to predict raids, harrying invaders before they reach the heartlands.",
+      "They read the gusts of shifting attention, harrying invading feelings before they reach the mind's core.",
     traits: [
-      "Coordinated Hunts: Operate in tandem to pressure enemy flanks.",
-      "Dust Riders: Plains winds propel their sudden strikes.",
+      "Twin Surges: Operate in tandem to pull focus in opposing directions.",
+      "Dust Wake: Plains winds fuel their accelerating strikes.",
     ],
     terrainModifiers: {
       plain: { attack: 1, initiative: 1 },
     },
     stats: { strength: 5, attack: 6, defence: 4, hp: 13, initiative: 7, movement: 5 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "stormglass-mystic",
-    name: "Stormglass Mystic",
+    id: "storm-thinker",
+    name: "Storm Thinker",
     role: "Arcane artillery",
     description:
-      "Channelers who store lightning in crystals, unleashing +2 ATK during storms over water tiles.",
+      "Focuses lightning-fast realizations, adding +2 ATK on water where intuition flows freely.",
     detail:
-      "Villagers consult them before voyages, lest the mystic summon squalls to bar passage.",
+      "Communities consult the thinker before voyages into change, lest sudden clarity strike without warning.",
     traits: [
-      "Charged Volley: Crackling bolts pierce armoured lines.",
-      "Tempest Caller: Gains +2 ATK on water as humidity amplifies their focus.",
+      "Charged Insight: Focused bolts pierce armored denial.",
+      "Tempest Recall: Gains +2 ATK on water as humidity amplifies their resonance.",
     ],
     terrainModifiers: {
       water: { attack: 2 },
     },
     stats: { strength: 4, attack: 8, defence: 3, hp: 13, initiative: 6, movement: 3 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "moorshield-giant",
-    name: "Moorshield Giant",
+    id: "mire-colossus",
+    name: "Mire Colossus",
     role: "Swamp guardian",
     description:
-      "A gentle behemoth protecting bog villages, adding +3 DEF in swamps but losing 1 INIT on mountains.",
+      "A gentle giant that steadies anxious bogs, adding +3 DEF in swamps but losing 1 INIT on mountains of clarity.",
     detail:
-      "Giant kin anchor floodgates and redirect rivers, demanding only respect for their marsh homes.",
+      "Colossi anchor floodgates in the subconscious, demanding only that wanderers respect the quiet depths.",
     traits: [
       "Living Bastion: Towering frame soaks damage for nearby allies.",
-      "Bogbound: Slow to leave their watery domain.",
+      "Bogbound: Slow to leave the waters that calm them.",
     ],
     terrainModifiers: {
       swamp: { defence: 3 },
       mountain: { initiative: -1 },
     },
     stats: { strength: 8, attack: 6, defence: 7, hp: 24, initiative: 4, movement: 2 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "emberbrand-pyromancer",
-    name: "Emberbrand Pyromancer",
+    id: "synapse-sparkmage",
+    name: "Synapse Sparkmage",
     role: "Area denial mage",
     description:
-      "Unleashes gouts of flame that add +2 STR when battling in forests or villages.",
+      "Ignites synaptic storms, adding +2 STR when clashing in forests or villages dense with interlinked thoughts.",
     detail:
-      "They burn supply trails to keep tyrants from marching, yet spare the innocent when tribute is paid.",
+      "They cauterize spiraling anxieties, burning away clutter so new insights can form without obstruction.",
     traits: [
-      "Scorching Barrage: Area flames deter close formations.",
-      "Selective Blaze: Boosted STR in tight terrain helps clear ambushers.",
+      "Scorch Pathways: Area flames deter clustered formations.",
+      "Focused Surge: Boosted STR in tight terrain clears ambushers.",
     ],
     terrainModifiers: {
       forest: { strength: 2 },
       village: { strength: 2 },
     },
     stats: { strength: 6, attack: 7, defence: 3, hp: 15, initiative: 6, movement: 4 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "skyborne-courier",
-    name: "Skyborne Courier",
+    id: "aerial-whisper",
+    name: "Aerial Whisper",
     role: "Aerial skirmisher",
     description:
-      "Messenger riders on gliders, boasting +2 INIT on plains and villages.",
+      "Winged messengers on currents of thought, boasting +2 INIT on plains and villages where news spreads fastest.",
     detail:
-      "They relay treaties from cliff-top eyries, dodging arrows with practiced dives.",
+      "They relay delicate agreements from ridge-top eyries, diving between ideas before skeptics can pin them down.",
     traits: [
-      "Dive Strike: Rapid assaults harry slow foes.",
-      "Courier's Grace: Swift repositioning avoids counterattacks.",
+      "Spiral Dive: Rapid assaults harry slow-moving notions.",
+      "Courier's Grace: Swift repositioning avoids counter-arguments.",
     ],
     terrainModifiers: {
       plain: { initiative: 2 },
       village: { initiative: 2 },
     },
     stats: { strength: 4, attack: 6, defence: 3, hp: 11, initiative: 9, movement: 6 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "gale-sentinel",
-    name: "Gale Sentinel",
+    id: "current-sentinel",
+    name: "Current Sentinel",
     role: "Defensive spear",
     description:
-      "Discipline spear lines that hold bridges, gaining +1 ATK and +1 DEF on water tiles.",
+      "Disciplined spear lines that hold emotional bridges, gaining +1 ATK/+1 DEF on water tiles.",
     detail:
-      "Sentinels patrol trading routes, levying tolls to fund their vigilant watch.",
+      "They patrol the flows of empathy, levying tolls in perspective before allowing armies to cross.",
     traits: [
-      "Wall of Spears: Keeps cavalry at bay with interlocking formations.",
-      "River Wardens: Control ferries and docks to deny enemy landings.",
+      "Wall of Reassurance: Keeps surging impulses at bay with interlocking staves.",
+      "River Wardens: Control ferries of thought to deny hostile landings.",
     ],
     terrainModifiers: {
       water: { attack: 1, defence: 1 },
     },
     stats: { strength: 6, attack: 6, defence: 5, hp: 16, initiative: 5, movement: 3 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "twilight-assassin",
-    name: "Twilight Assassin",
+    id: "shadow-doubt",
+    name: "Shadow Doubt",
     role: "Stealth operative",
     description:
-      "Strikes from shadows with +2 ATK in forests and villages but suffers -1 DEF on open plains.",
+      "Strikes from the subconscious with +2 ATK in forests and villages but suffers -1 DEF on open plains of scrutiny.",
     detail:
-      "They enforce secret accords, eliminating leaders who break neutrality oaths.",
+      "They enforce neutrality pacts by quietly removing influences that tip the balance too far one way.",
     traits: [
-      "Silent Blade: Eliminates targets before alarms sound.",
-      "Shadow Step: Melds with urban alleys and woodland paths.",
+      "Silent Question: Eliminates targets before alarms sound.",
+      "Vanishing Trail: Melds with alleys and wooded paths.",
     ],
     terrainModifiers: {
       forest: { attack: 2 },
@@ -223,18 +223,18 @@ export const INDEPENDENT_UNITS = [
       plain: { defence: -1 },
     },
     stats: { strength: 5, attack: 8, defence: 3, hp: 12, initiative: 8, movement: 5 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "ironroot-treant",
-    name: "Ironroot Treant",
+    id: "heirloom-ent",
+    name: "Heirloom Ent",
     role: "Living fortification",
     description:
-      "A colossal tree guardian with +3 DEF in forests and +2 STR when rooted in swamps.",
+      "An ancient memory-tree with +3 DEF in forests and +2 STR when rooted in swamps of deep feeling.",
     detail:
-      "Treants awaken when ancient groves are threatened, crushing invaders beneath ironbark limbs.",
+      "Ents awaken when treasured traditions are threatened, crushing invaders beneath ironbark limbs.",
     traits: [
-      "Rooted Rampart: Bark armour wards off siege engines.",
+      "Rooted Rampart: Bark armor wards off relentless sieges.",
       "Verdant Fury: Draws on wet soil to fuel devastating swings.",
     ],
     terrainModifiers: {
@@ -242,41 +242,41 @@ export const INDEPENDENT_UNITS = [
       swamp: { strength: 2 },
     },
     stats: { strength: 8, attack: 6, defence: 8, hp: 26, initiative: 2, movement: 1 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "glacial-adept",
-    name: "Glacial Adept",
+    id: "stillness-oracle",
+    name: "Stillness Oracle",
     role: "Control caster",
     description:
-      "Manipulates frost, reducing enemy INIT but gaining +2 DEF on water and mountains.",
+      "Manipulates icy calm, reducing enemy INIT while gaining +2 DEF on water and mountains of reflection.",
     detail:
-      "Adept enclaves freeze river crossings to stall armies until negotiations conclude.",
+      "Oracles freeze racing thoughts to stall conflict until minds can settle on a course.",
     traits: [
-      "Frost Lock: Slows foes with numbing blasts.",
-      "Icebound Ward: Channel cold stone and rivers for protection.",
+      "Frost Lock: Slows foes with numbing insight.",
+      "Icebound Ward: Channels cold stone and rivers for protection.",
     ],
     terrainModifiers: {
       water: { defence: 2 },
       mountain: { defence: 2 },
     },
     stats: { strength: 4, attack: 6, defence: 5, hp: 14, initiative: 5, movement: 3 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
   {
-    id: "crystal-bastion",
-    name: "Crystal Bastion",
+    id: "resolve-monolith",
+    name: "Resolve Monolith",
     role: "Animated bulwark",
     description:
-      "A sentient fortress shard with immense HP and DEF, immobile but relentless.",
+      "A sentient shard of determination with immense HP and DEF, immobile but relentless in holding its ground.",
     detail:
-      "The bastion drifts between realms, shielding settlements that honor ancient treaties.",
+      "The monolith drifts between contested thoughts, shielding settlements that honor the mind's core bargains.",
     traits: [
-      "Impassable Wall: Near-impenetrable defenses slow entire battalions.",
+      "Impassable Will: Near-impenetrable defenses slow entire battalions.",
       "Arcane Core: Redirects magical assaults into radiant counterblows.",
     ],
     stats: { strength: 7, attack: 4, defence: 9, hp: 28, initiative: 1, movement: 0 },
-    cost: { gold: 0, metal: 0 },
+    cost: { inspiration: 0, will: 0 },
   },
 ];
 
