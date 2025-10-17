@@ -2,6 +2,13 @@
   --grid-size: 10;
   --cell-size: clamp(30px, 8vw, 60px);
   --cell-gap: 4px;
+  --panel-padding: 1.5rem;
+  --board-min-width: calc(
+    var(--grid-size) * var(--cell-size) +
+      (var(--grid-size) - 1) * var(--cell-gap) +
+      2 * var(--cell-gap)
+  );
+  --board-column-min: calc(var(--board-min-width) + 2 * var(--panel-padding));
   --primary: #1d3557;
   --primary-light: #457b9d;
   --accent: #e63946;
@@ -32,10 +39,13 @@ body.modal-open {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) 1fr minmax(220px, 280px);
+  grid-template-columns:
+    minmax(220px, 260px)
+    minmax(var(--board-column-min), 1fr)
+    minmax(220px, 280px);
   grid-template-areas: "province board sidebar";
   gap: 2rem;
-  width: min(100%, 1200px);
+  width: min(100%, calc(var(--board-column-min) + 540px + 4rem));
   align-items: stretch;
 }
 
@@ -43,7 +53,7 @@ body.modal-open {
   grid-area: province;
   background: white;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: var(--panel-padding);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -175,7 +185,7 @@ body.modal-open {
 .board-panel {
   background: white;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: var(--panel-padding);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 
@@ -668,7 +678,7 @@ body.modal-open {
   grid-area: sidebar;
   background: white;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: var(--panel-padding);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -798,10 +808,13 @@ body.modal-open {
 
 @media (max-width: 1180px) {
   .layout {
-    grid-template-columns: minmax(220px, 260px) 1fr;
+    grid-template-columns:
+      minmax(var(--board-column-min), 1fr)
+      minmax(220px, 280px);
     grid-template-areas:
       "board sidebar"
       "province sidebar";
+    width: min(100%, calc(var(--board-column-min) + 280px + 2rem));
   }
 
   .province-sidebar {
@@ -2066,6 +2079,10 @@ body.modal-open {
 }
 
 @media (max-width: 900px) {
+  :root {
+    --panel-padding: clamp(1rem, 3vw, 1.25rem);
+  }
+
   body {
     align-items: stretch;
     justify-content: flex-start;
@@ -2085,7 +2102,7 @@ body.modal-open {
   .board-panel,
   .sidebar,
   .province-sidebar {
-    padding: clamp(1rem, 3vw, 1.25rem);
+    padding: var(--panel-padding);
   }
 
   .panel-header {
@@ -2120,6 +2137,7 @@ body.modal-open {
 
 @media (max-width: 600px) {
   :root {
+    --panel-padding: clamp(0.75rem, 4vw, 1rem);
     --cell-size: min(46px, calc((100vw - 3.5rem) / var(--grid-size)));
     --cell-gap: 3px;
   }
@@ -2135,7 +2153,7 @@ body.modal-open {
   .board-panel,
   .sidebar,
   .province-sidebar {
-    padding: clamp(0.75rem, 4vw, 1rem);
+    padding: var(--panel-padding);
   }
 
   .help-button {
