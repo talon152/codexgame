@@ -1,36 +1,36 @@
 export const GRID_SIZE = 10;
 
 export const TERRAIN_TYPES = [
-  { name: "forest", label: "Forest", className: "terrain-forest" },
-  { name: "plain", label: "Plain", className: "terrain-plain" },
-  { name: "village", label: "Village", className: "terrain-village" },
-  { name: "mountain", label: "Mountain", className: "terrain-mountain" },
-  { name: "swamp", label: "Swamp", className: "terrain-swamp" },
-  { name: "water", label: "Water", className: "terrain-water" },
+  { name: "grove", label: "Lumin Grove", className: "terrain-grove" },
+  { name: "steppe", label: "Aurora Steppe", className: "terrain-steppe" },
+  { name: "sanctum", label: "Sky Sanctum", className: "terrain-sanctum" },
+  { name: "spire", label: "Celestial Spire", className: "terrain-spire" },
+  { name: "fen", label: "Glimmer Fen", className: "terrain-fen" },
+  { name: "current", label: "Star Current", className: "terrain-current" },
 ];
 
 export const TERRAIN_RESOURCE_RULES = {
-  forest: {
+  grove: {
     inspiration: { min: 1, max: 2 },
     will: { min: 1, max: 2 },
   },
-  plain: {
+  steppe: {
     inspiration: { min: 2, max: 4 },
     will: { min: 0, max: 1 },
   },
-  village: {
+  sanctum: {
     inspiration: { min: 3, max: 5 },
     will: { min: 1, max: 2 },
   },
-  mountain: {
+  spire: {
     inspiration: { min: 0, max: 1 },
     will: { min: 3, max: 5 },
   },
-  swamp: {
+  fen: {
     inspiration: { min: 1, max: 3 },
     will: { min: 0, max: 1 },
   },
-  water: {
+  current: {
     inspiration: { min: 1, max: 2 },
     will: { min: 0, max: 0 },
   },

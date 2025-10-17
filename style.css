@@ -610,67 +610,57 @@ body.modal-open {
   box-shadow: 0 0 0 3px var(--accent), 0 10px 20px rgba(230, 57, 70, 0.35);
 }
 
-.terrain-forest {
-  background-color: #2f5d36;
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%),
-    linear-gradient(45deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%),
-    linear-gradient(315deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%);
-  background-size: 24px 24px;
-  background-position: 0 0, 12px 0, 12px -12px, 0px 12px;
+.terrain-grove {
+  background-color: #234d4f;
+  background-image: linear-gradient(135deg, rgba(171, 255, 214, 0.2) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(171, 255, 214, 0.12) 25%, transparent 25%),
+    radial-gradient(circle at 30% 30%, rgba(123, 255, 196, 0.25), transparent 55%),
+    radial-gradient(circle at 70% 60%, rgba(37, 91, 92, 0.4), transparent 65%);
+  background-size: 26px 26px;
+  background-position: 0 0, 13px 0, 0 0, 0 0;
 }
 
-.terrain-plain {
-  background-color: #bcd77b;
-  background-image: repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.2),
-      rgba(255, 255, 255, 0.2) 2px,
-      transparent 2px,
-      transparent 10px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.15),
-      rgba(255, 255, 255, 0.15) 1px,
-      transparent 1px,
-      transparent 8px
-    );
-  color: #274001;
+.terrain-steppe {
+  background-color: #304b7b;
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2) 12%, transparent 12%),
+    linear-gradient(300deg, rgba(124, 218, 255, 0.35) 12%, transparent 12%),
+    linear-gradient(60deg, rgba(255, 179, 71, 0.18) 12%, transparent 12%);
+  background-size: 40px 40px;
+  color: #ecf4ff;
   text-shadow: none;
 }
 
-.terrain-village {
-  background-color: #d7b377;
+.terrain-sanctum {
+  background-color: #67548f;
   background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
-    linear-gradient(135deg, rgba(111, 78, 55, 0.25) 15%, transparent 0);
-  background-size: 20px 20px, 20px 20px, 30px 30px;
-  color: #4a2c18;
+    linear-gradient(0deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(255, 214, 153, 0.22) 20%, transparent 0);
+  background-size: 22px 22px, 22px 22px, 32px 32px;
+  color: #fdf4ff;
   text-shadow: none;
 }
 
-.terrain-mountain {
-  background-color: #6c757d;
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 25%, transparent 25%),
-    linear-gradient(225deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%),
-    linear-gradient(45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%);
+.terrain-spire {
+  background-color: #4f5f77;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 20%, transparent 20%),
+    linear-gradient(225deg, rgba(200, 220, 255, 0.2) 20%, transparent 20%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.18) 20%, transparent 20%);
   background-size: 28px 28px;
   background-position: 0 0, 14px 0, 14px -14px;
 }
 
-.terrain-swamp {
-  background-color: #3b4d28;
-  background-image: radial-gradient(circle at 20% 20%, rgba(178, 255, 89, 0.25), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgba(100, 152, 65, 0.2), transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(112, 157, 97, 0.3), transparent 55%);
+.terrain-fen {
+  background-color: #283f3d;
+  background-image: radial-gradient(circle at 25% 30%, rgba(140, 255, 241, 0.25), transparent 45%),
+    radial-gradient(circle at 75% 25%, rgba(82, 189, 185, 0.3), transparent 55%),
+    radial-gradient(circle at 50% 80%, rgba(41, 119, 115, 0.28), transparent 60%);
 }
 
-.terrain-water {
-  background-color: #2364aa;
-  background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35) 10%, transparent 10%),
-    radial-gradient(circle at 80% 25%, rgba(255, 255, 255, 0.25) 12%, transparent 12%),
-    radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.2) 12%, transparent 12%);
+.terrain-current {
+  background-color: #142d5c;
+  background-image: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35) 10%, transparent 10%),
+    radial-gradient(circle at 70% 25%, rgba(138, 197, 255, 0.28) 14%, transparent 14%),
+    radial-gradient(circle at 40% 80%, rgba(94, 163, 255, 0.2) 14%, transparent 14%);
   background-size: 60px 60px;
 }
 

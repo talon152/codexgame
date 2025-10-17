@@ -2,7 +2,7 @@ export const INDEPENDENT_FACTION = {
   id: "independent",
   name: "Neutral Echoes",
   summary:
-    "Autonomous manifestations of memory that defend neglected mindscapes until a new emotion integrates them.",
+    "Autonomous manifestations of memory that defend drifting skyrealms until a new emotion integrates them.",
 };
 
 export const INDEPENDENT_UNITS = [
@@ -11,15 +11,15 @@ export const INDEPENDENT_UNITS = [
     name: "Memory Bulwark",
     role: "Anchored sentinel",
     description:
-      "Stoic guardians of long-held beliefs, gaining +2 DEF on mountain ridges where convictions feel unshakeable.",
+      "Stoic guardians of long-held beliefs, gaining +2 DEF on Celestial Spire ridges where convictions feel unshakeable.",
     detail:
       "They brace crumbling ramparts of thought, letting warring sentiments negotiate without shattering the past outright.",
     traits: [
       "Unflinching Recall: Balanced stats let them weather most frontal assaults.",
-      "Bedrock Resolve: Mountain footing adds +2 DEF as they root themselves in certainty.",
+      "Bedrock Resolve: Spire footing adds +2 DEF as they root themselves in certainty.",
     ],
     terrainModifiers: {
-      mountain: { defence: 2 },
+      spire: { defence: 2 },
     },
     stats: { strength: 6, attack: 5, defence: 6, hp: 18, initiative: 5, movement: 3 },
     cost: { inspiration: 0, will: 0 },
@@ -27,17 +27,17 @@ export const INDEPENDENT_UNITS = [
   {
     id: "glimmer-tracker",
     name: "Glimmer Tracker",
-    role: "Forest archer",
+    role: "Grove archer",
     description:
-      "Hunters of fleeting optimism that gain +2 ATK and +1 INIT when stalking the wooded paths of nostalgia.",
+      "Hunters of fleeting optimism that gain +2 ATK and +1 INIT when stalking the luminous paths of nostalgia.",
     detail:
       "They follow sparks of joy through tangled recollections, guiding them toward whichever emotion proves worthy.",
     traits: [
       "Hopeful Volley: Radiant arrows pierce even armored doubts.",
-      "Quick Rekindle: Forest cover grants +1 INIT as they dart between memories.",
+      "Quick Rekindle: Lumin Grove cover grants +1 INIT as they dart between memories.",
     ],
     terrainModifiers: {
-      forest: { attack: 2, initiative: 1 },
+      grove: { attack: 2, initiative: 1 },
     },
     stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7, movement: 4 },
     cost: { inspiration: 0, will: 0 },
@@ -45,9 +45,9 @@ export const INDEPENDENT_UNITS = [
   {
     id: "tide-messenger",
     name: "Tide Messenger",
-    role: "Swamp skirmisher",
+    role: "Fen skirmisher",
     description:
-      "Guides who treat subconscious wetlands as open roads, gaining +2 INIT on swamps and water.",
+      "Guides who treat shimmering wetlands as open roads, gaining +2 INIT on glimmer fens and Star Currents.",
     detail:
       "They ferry warnings through murky emotions, striking intruders before slipping beneath the surface of awareness.",
     traits: [
@@ -55,8 +55,8 @@ export const INDEPENDENT_UNITS = [
       "Wake Ripple: Alerts allies with sudden strikes before vanishing.",
     ],
     terrainModifiers: {
-      swamp: { initiative: 2 },
-      water: { initiative: 2 },
+      fen: { initiative: 2 },
+      current: { initiative: 2 },
     },
     stats: { strength: 4, attack: 5, defence: 3, hp: 12, initiative: 8, movement: 5 },
     cost: { inspiration: 0, will: 0 },
@@ -79,17 +79,17 @@ export const INDEPENDENT_UNITS = [
   {
     id: "conviction-keeper",
     name: "Conviction Keeper",
-    role: "Sanctuary guardian",
+    role: "Sanctum guardian",
     description:
-      "Watchers who safeguard communal promises, granting +2 DEF when defending villages of shared intent.",
+      "Watchers who safeguard communal promises, granting +2 DEF when defending Sky Sanctums of shared intent.",
     detail:
       "They judge which emotions may draw power from a settlement, shielding it from manipulative whispers until consensus forms.",
     traits: [
       "Unbroken Vows: Stout shields repel corrosive guilt.",
-      "Hearthstone Ward: Villages empower their protective sigils.",
+      "Hearthstone Ward: Sanctums empower their protective sigils.",
     ],
     terrainModifiers: {
-      village: { defence: 2 },
+      sanctum: { defence: 2 },
     },
     stats: { strength: 6, attack: 6, defence: 6, hp: 16, initiative: 6, movement: 3 },
     cost: { inspiration: 0, will: 0 },
@@ -97,17 +97,17 @@ export const INDEPENDENT_UNITS = [
   {
     id: "impulse-riders",
     name: "Impulse Riders",
-    role: "Wasteland outriders",
+    role: "Steppe outriders",
     description:
-      "Pairs of thrillseekers who race across open plains, adding +1 ATK and +1 INIT when charging through exposed thoughts.",
+      "Pairs of thrillseekers who race across the aurora steppe, adding +1 ATK and +1 INIT when charging through exposed thoughts.",
     detail:
       "They read the gusts of shifting attention, harrying invading feelings before they reach the mind's core.",
     traits: [
       "Twin Surges: Operate in tandem to pull focus in opposing directions.",
-      "Dust Wake: Plains winds fuel their accelerating strikes.",
+      "Dust Wake: Steppe winds fuel their accelerating strikes.",
     ],
     terrainModifiers: {
-      plain: { attack: 1, initiative: 1 },
+      steppe: { attack: 1, initiative: 1 },
     },
     stats: { strength: 5, attack: 6, defence: 4, hp: 13, initiative: 7, movement: 5 },
     cost: { inspiration: 0, will: 0 },
@@ -117,15 +117,15 @@ export const INDEPENDENT_UNITS = [
     name: "Storm Thinker",
     role: "Arcane artillery",
     description:
-      "Focuses lightning-fast realizations, adding +2 ATK on water where intuition flows freely.",
+      "Focuses lightning-fast realizations, adding +2 ATK on Star Currents where intuition flows freely.",
     detail:
       "Communities consult the thinker before voyages into change, lest sudden clarity strike without warning.",
     traits: [
       "Charged Insight: Focused bolts pierce armored denial.",
-      "Tempest Recall: Gains +2 ATK on water as humidity amplifies their resonance.",
+      "Tempest Recall: Gains +2 ATK on Star Currents as humidity amplifies their resonance.",
     ],
     terrainModifiers: {
-      water: { attack: 2 },
+      current: { attack: 2 },
     },
     stats: { strength: 4, attack: 8, defence: 3, hp: 13, initiative: 6, movement: 3 },
     cost: { inspiration: 0, will: 0 },
@@ -133,9 +133,9 @@ export const INDEPENDENT_UNITS = [
   {
     id: "mire-colossus",
     name: "Mire Colossus",
-    role: "Swamp guardian",
+    role: "Fen guardian",
     description:
-      "A gentle giant that steadies anxious bogs, adding +3 DEF in swamps but losing 1 INIT on mountains of clarity.",
+      "A gentle giant that steadies anxious bogs, adding +3 DEF in glimmer fens but losing 1 INIT on Celestial Spires of clarity.",
     detail:
       "Colossi anchor floodgates in the subconscious, demanding only that wanderers respect the quiet depths.",
     traits: [
@@ -143,8 +143,8 @@ export const INDEPENDENT_UNITS = [
       "Bogbound: Slow to leave the waters that calm them.",
     ],
     terrainModifiers: {
-      swamp: { defence: 3 },
-      mountain: { initiative: -1 },
+      fen: { defence: 3 },
+      spire: { initiative: -1 },
     },
     stats: { strength: 8, attack: 6, defence: 7, hp: 24, initiative: 4, movement: 2 },
     cost: { inspiration: 0, will: 0 },
@@ -154,7 +154,7 @@ export const INDEPENDENT_UNITS = [
     name: "Synapse Sparkmage",
     role: "Area denial mage",
     description:
-      "Ignites synaptic storms, adding +2 STR when clashing in forests or villages dense with interlinked thoughts.",
+      "Ignites synaptic storms, adding +2 STR when clashing in Lumin Groves or Sky Sanctums dense with interlinked thoughts.",
     detail:
       "They cauterize spiraling anxieties, burning away clutter so new insights can form without obstruction.",
     traits: [
@@ -162,8 +162,8 @@ export const INDEPENDENT_UNITS = [
       "Focused Surge: Boosted STR in tight terrain clears ambushers.",
     ],
     terrainModifiers: {
-      forest: { strength: 2 },
-      village: { strength: 2 },
+      grove: { strength: 2 },
+      sanctum: { strength: 2 },
     },
     stats: { strength: 6, attack: 7, defence: 3, hp: 15, initiative: 6, movement: 4 },
     cost: { inspiration: 0, will: 0 },
@@ -173,7 +173,7 @@ export const INDEPENDENT_UNITS = [
     name: "Aerial Whisper",
     role: "Aerial skirmisher",
     description:
-      "Winged messengers on currents of thought, boasting +2 INIT on plains and villages where news spreads fastest.",
+      "Winged messengers on currents of thought, boasting +2 INIT on aurora steppes and Sky Sanctums where news spreads fastest.",
     detail:
       "They relay delicate agreements from ridge-top eyries, diving between ideas before skeptics can pin them down.",
     traits: [
@@ -181,8 +181,8 @@ export const INDEPENDENT_UNITS = [
       "Courier's Grace: Swift repositioning avoids counter-arguments.",
     ],
     terrainModifiers: {
-      plain: { initiative: 2 },
-      village: { initiative: 2 },
+      steppe: { initiative: 2 },
+      sanctum: { initiative: 2 },
     },
     stats: { strength: 4, attack: 6, defence: 3, hp: 11, initiative: 9, movement: 6 },
     cost: { inspiration: 0, will: 0 },
@@ -190,9 +190,9 @@ export const INDEPENDENT_UNITS = [
   {
     id: "current-sentinel",
     name: "Current Sentinel",
-    role: "Defensive spear",
+    role: "Current spearwall",
     description:
-      "Disciplined spear lines that hold emotional bridges, gaining +1 ATK/+1 DEF on water tiles.",
+      "Disciplined spear lines that hold emotional bridges, gaining +1 ATK/+1 DEF on Star Currents.",
     detail:
       "They patrol the flows of empathy, levying tolls in perspective before allowing armies to cross.",
     traits: [
@@ -200,7 +200,7 @@ export const INDEPENDENT_UNITS = [
       "River Wardens: Control ferries of thought to deny hostile landings.",
     ],
     terrainModifiers: {
-      water: { attack: 1, defence: 1 },
+      current: { attack: 1, defence: 1 },
     },
     stats: { strength: 6, attack: 6, defence: 5, hp: 16, initiative: 5, movement: 3 },
     cost: { inspiration: 0, will: 0 },
@@ -210,17 +210,17 @@ export const INDEPENDENT_UNITS = [
     name: "Shadow Doubt",
     role: "Stealth operative",
     description:
-      "Strikes from the subconscious with +2 ATK in forests and villages but suffers -1 DEF on open plains of scrutiny.",
+      "Strikes from the subconscious with +2 ATK in Lumin Groves and Sky Sanctums but suffers -1 DEF on open aurora steppes of scrutiny.",
     detail:
       "They enforce neutrality pacts by quietly removing influences that tip the balance too far one way.",
     traits: [
       "Silent Question: Eliminates targets before alarms sound.",
-      "Vanishing Trail: Melds with alleys and wooded paths.",
+      "Vanishing Trail: Melds with alleys and radiant canopies.",
     ],
     terrainModifiers: {
-      forest: { attack: 2 },
-      village: { attack: 2 },
-      plain: { defence: -1 },
+      grove: { attack: 2 },
+      sanctum: { attack: 2 },
+      steppe: { defence: -1 },
     },
     stats: { strength: 5, attack: 8, defence: 3, hp: 12, initiative: 8, movement: 5 },
     cost: { inspiration: 0, will: 0 },
@@ -230,7 +230,7 @@ export const INDEPENDENT_UNITS = [
     name: "Heirloom Ent",
     role: "Living fortification",
     description:
-      "An ancient memory-tree with +3 DEF in forests and +2 STR when rooted in swamps of deep feeling.",
+      "An ancient memory-tree with +3 DEF in Lumin Groves and +2 STR when rooted in glimmer fens of deep feeling.",
     detail:
       "Ents awaken when treasured traditions are threatened, crushing invaders beneath ironbark limbs.",
     traits: [
@@ -238,8 +238,8 @@ export const INDEPENDENT_UNITS = [
       "Verdant Fury: Draws on wet soil to fuel devastating swings.",
     ],
     terrainModifiers: {
-      forest: { defence: 3 },
-      swamp: { strength: 2 },
+      grove: { defence: 3 },
+      fen: { strength: 2 },
     },
     stats: { strength: 8, attack: 6, defence: 8, hp: 26, initiative: 2, movement: 1 },
     cost: { inspiration: 0, will: 0 },
@@ -249,7 +249,7 @@ export const INDEPENDENT_UNITS = [
     name: "Stillness Oracle",
     role: "Control caster",
     description:
-      "Manipulates icy calm, reducing enemy INIT while gaining +2 DEF on water and mountains of reflection.",
+      "Manipulates icy calm, reducing enemy INIT while gaining +2 DEF on Star Currents and Celestial Spires of reflection.",
     detail:
       "Oracles freeze racing thoughts to stall conflict until minds can settle on a course.",
     traits: [
@@ -257,8 +257,8 @@ export const INDEPENDENT_UNITS = [
       "Icebound Ward: Channels cold stone and rivers for protection.",
     ],
     terrainModifiers: {
-      water: { defence: 2 },
-      mountain: { defence: 2 },
+      current: { defence: 2 },
+      spire: { defence: 2 },
     },
     stats: { strength: 4, attack: 6, defence: 5, hp: 14, initiative: 5, movement: 3 },
     cost: { inspiration: 0, will: 0 },
