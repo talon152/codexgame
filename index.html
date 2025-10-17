@@ -45,9 +45,15 @@
       </section>
       <aside class="sidebar" aria-live="polite">
         <section class="turn-panel" aria-label="Turn details">
-          <h2>Turn Sequence</h2>
+          <div
+            id="sidebar-phase-badge"
+            class="phase-badge"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
           <p class="turn-panel__intro">
-            Review the sequence of phases and advance when you're ready.
+            Review the current phase and advance when you're ready.
           </p>
           <div class="resource-summary" aria-live="polite">
             <p class="resource-summary__title">Resources</p>
@@ -70,7 +76,6 @@
               </span>
             </div>
           </div>
-          <ol id="phase-list" class="phase-list" aria-label="Phases this turn"></ol>
           <button id="advance-phase" type="button" class="next-turn-button">
             Next Phase
           </button>
