@@ -12,7 +12,7 @@ const currentFactionDisplay = document.getElementById("current-faction");
 const turnCounterDisplay = document.getElementById("turn-counter");
 const phaseNameDisplay = document.getElementById("phase-name");
 const phaseSummaryDisplay = document.getElementById("phase-summary");
-const phaseListElement = document.getElementById("phase-list");
+const sidebarPhaseBadge = document.getElementById("sidebar-phase-badge");
 const advancePhaseButton = document.getElementById("advance-phase");
 const cellUnitList = document.getElementById("cell-unit-list");
 const cellResourceList = document.getElementById("cell-resource-list");
@@ -435,17 +435,6 @@ const beginCapitalSelection = () => {
   updateTurnDisplay();
 };
 
-const renderPhaseList = () => {
-  phaseListElement.innerHTML = "";
-
-  TURN_PHASES.forEach((phase, index) => {
-    const listItem = document.createElement("li");
-    listItem.textContent = phase.label;
-    listItem.dataset.phaseIndex = index.toString();
-    phaseListElement.appendChild(listItem);
-  });
-};
-
 const updatePhaseDisplay = () => {
   if (isCapitalSelectionActive()) {
     if (phaseNameDisplay) {
@@ -473,6 +462,14 @@ const updatePhaseDisplay = () => {
       phaseSummaryDisplay.textContent = summaryParts.join(" ");
     }
 
+    if (sidebarPhaseBadge) {
+      const badgeLabel = "Capital Placement";
+      sidebarPhaseBadge.textContent = badgeLabel;
+      sidebarPhaseBadge.className = "phase-badge phase-badge--capital";
+      sidebarPhaseBadge.hidden = !badgeLabel;
+      sidebarPhaseBadge.setAttribute("aria-label", `Current phase: ${badgeLabel}`);
+    }
+
     if (capitalGuidance) {
       const guidanceParts = [];
 
@@ -494,36 +491,37 @@ const updatePhaseDisplay = () => {
       capitalGuidance.hidden = guidanceParts.length === 0;
     }
 
-    Array.from(phaseListElement.children).forEach((item) => {
-      item.classList.remove("is-active", "is-complete");
-      item.removeAttribute("aria-current");
-    });
-
     updateCapitalHighlights();
     return;
   }
 
   const activePhase = TURN_PHASES[turnState.currentPhaseIndex];
-  phaseNameDisplay.textContent = activePhase.label;
-  phaseSummaryDisplay.textContent = activePhase.summary;
+
+  if (activePhase) {
+    phaseNameDisplay.textContent = activePhase.label;
+    phaseSummaryDisplay.textContent = activePhase.summary;
+  } else {
+    phaseNameDisplay.textContent = "";
+    phaseSummaryDisplay.textContent = "";
+  }
+
+  if (sidebarPhaseBadge) {
+    const badgeLabel = activePhase?.label ?? "";
+    sidebarPhaseBadge.textContent = badgeLabel;
+    sidebarPhaseBadge.className = "phase-badge phase-badge--turn";
+    sidebarPhaseBadge.hidden = !badgeLabel;
+
+    if (badgeLabel) {
+      sidebarPhaseBadge.setAttribute("aria-label", `Current phase: ${badgeLabel}`);
+    } else {
+      sidebarPhaseBadge.removeAttribute("aria-label");
+    }
+  }
 
   if (capitalGuidance) {
     capitalGuidance.textContent = "";
     capitalGuidance.hidden = true;
   }
-
-  Array.from(phaseListElement.children).forEach((item, index) => {
-    const isActive = index === turnState.currentPhaseIndex;
-    const isComplete = index < turnState.currentPhaseIndex;
-    item.classList.toggle("is-active", isActive);
-    item.classList.toggle("is-complete", isComplete);
-
-    if (isActive) {
-      item.setAttribute("aria-current", "step");
-    } else {
-      item.removeAttribute("aria-current");
-    }
-  });
 
   updateCapitalHighlights();
 };
@@ -3020,7 +3018,6 @@ const buildGrid = () => {
 
 closeBattleModal();
 buildGrid();
-renderPhaseList();
 updateTurnDisplay();
 renderSelectedCellDetails(null);
 openArmySelector({ focusSelect: true });
