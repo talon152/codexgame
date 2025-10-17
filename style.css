@@ -122,6 +122,49 @@ body.modal-open {
   color: var(--primary);
 }
 
+.province-unit-card__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.province-unit-card__select {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: rgba(69, 123, 157, 0.12);
+  color: var(--primary);
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.province-unit-card__select:hover,
+.province-unit-card__select:focus-visible {
+  background: rgba(69, 123, 157, 0.22);
+  transform: translateY(-1px);
+}
+
+.province-unit-card__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.province-unit-card--selectable {
+  cursor: pointer;
+}
+
+.province-unit-card--selected {
+  box-shadow: 0 0 0 2px rgba(69, 123, 157, 0.35),
+    0 8px 20px rgba(29, 53, 87, 0.15);
+}
+
+.province-unit-card--selected .province-unit-card__select {
+  background: var(--primary);
+  color: white;
+}
+
 .province-unit-card__details {
   appearance: none;
   border: none;
@@ -972,17 +1015,6 @@ body.modal-open {
   min-height: 1.5rem;
 }
 
-.selected-cell-units {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.selected-cell-units h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
 .selected-cell-resources {
   display: flex;
   flex-direction: column;
@@ -1023,142 +1055,6 @@ body.modal-open {
 .resource-item[data-resource="will"] {
   background: rgba(132, 146, 166, 0.28);
   color: #1f2a34;
-}
-
-.unit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.unit-list li.unit-empty {
-  font-style: italic;
-  color: rgba(27, 27, 27, 0.6);
-}
-
-.unit-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  border-radius: 12px;
-  padding: 0.9rem;
-  background: rgba(69, 123, 157, 0.08);
-  border: 1px solid rgba(69, 123, 157, 0.25);
-  position: relative;
-  cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease,
-    border-color 120ms ease, background 120ms ease;
-}
-
-.unit-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(69, 123, 157, 0.25);
-}
-
-.unit-card.is-selected {
-  border-color: rgba(230, 57, 70, 0.45);
-  box-shadow: inset 0 0 0 2px rgba(230, 57, 70, 0.35),
-    0 6px 16px rgba(230, 57, 70, 0.25);
-  background: rgba(230, 57, 70, 0.08);
-}
-
-.unit-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.unit-card__select {
-  align-self: flex-start;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(230, 57, 70, 0.6);
-  background: rgba(230, 57, 70, 0.12);
-  color: rgba(230, 57, 70, 0.85);
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.unit-card__select:hover {
-  background: rgba(230, 57, 70, 0.22);
-  color: rgba(230, 57, 70, 1);
-}
-
-.unit-card.is-selected .unit-card__select {
-  background: rgba(230, 57, 70, 0.22);
-  color: rgba(230, 57, 70, 1);
-}
-
-.unit-list .unit-name {
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-
-.unit-list .unit-role {
-  font-size: 0.8rem;
-  color: rgba(27, 27, 27, 0.75);
-}
-
-.unit-list .unit-meta {
-  font-size: 0.75rem;
-  color: rgba(27, 27, 27, 0.7);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.unit-list .unit-stats {
-  font-size: 0.8rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.unit-list .unit-stats .unit-stat {
-  padding: 0.15rem 0.4rem;
-  border-radius: 999px;
-  background: rgba(69, 123, 157, 0.18);
-  letter-spacing: 0.02em;
-}
-
-.unit-cost {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-}
-
-.unit-cost__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 999px;
-  background: rgba(29, 53, 87, 0.12);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.unit-cost__badge[data-resource="inspiration"] {
-  background: rgba(236, 181, 67, 0.22);
-  color: #7b4b00;
-}
-
-.unit-cost__badge[data-resource="will"] {
-  background: rgba(132, 146, 166, 0.28);
-  color: #1f2a34;
-}
-
-.unit-list .unit-description {
-  display: block;
-  font-size: 0.8rem;
-  color: rgba(27, 27, 27, 0.72);
 }
 
 .selection-actions {
