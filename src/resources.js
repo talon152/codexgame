@@ -53,19 +53,19 @@ export const normaliseAmount = (value) => {
 
 export const getFactionResources = (factionId) => {
   if (!factionId) {
-    return { gold: 0, metal: 0 };
+    return { inspiration: 0, will: 0 };
   }
 
   const stored = factionResources.get(factionId);
   if (!stored) {
-    const defaults = { gold: 0, metal: 0 };
+    const defaults = { inspiration: 0, will: 0 };
     factionResources.set(factionId, defaults);
     return { ...defaults };
   }
 
-  const gold = normaliseAmount(stored.gold ?? 0);
-  const metal = normaliseAmount(stored.metal ?? 0);
-  return { gold, metal };
+  const inspiration = normaliseAmount(stored.inspiration ?? 0);
+  const will = normaliseAmount(stored.will ?? 0);
+  return { inspiration, will };
 };
 
 export const setFactionResources = (factionId, values) => {
@@ -73,20 +73,23 @@ export const setFactionResources = (factionId, values) => {
     return;
   }
 
-  const gold = Math.max(0, normaliseAmount(values?.gold ?? 0));
-  const metal = Math.max(0, normaliseAmount(values?.metal ?? 0));
-  factionResources.set(factionId, { gold, metal });
+  const inspiration = Math.max(0, normaliseAmount(values?.inspiration ?? 0));
+  const will = Math.max(0, normaliseAmount(values?.will ?? 0));
+  factionResources.set(factionId, { inspiration, will });
 };
 
 export const adjustFactionResources = (factionId, delta) => {
   if (!factionId) {
-    return { gold: 0, metal: 0 };
+    return { inspiration: 0, will: 0 };
   }
 
   const current = getFactionResources(factionId);
-  const nextGold = Math.max(0, current.gold + normaliseAmount(delta?.gold ?? 0));
-  const nextMetal = Math.max(0, current.metal + normaliseAmount(delta?.metal ?? 0));
-  const nextResources = { gold: nextGold, metal: nextMetal };
+  const nextInspiration = Math.max(
+    0,
+    current.inspiration + normaliseAmount(delta?.inspiration ?? 0),
+  );
+  const nextWill = Math.max(0, current.will + normaliseAmount(delta?.will ?? 0));
+  const nextResources = { inspiration: nextInspiration, will: nextWill };
   setFactionResources(factionId, nextResources);
   return nextResources;
 };
@@ -112,12 +115,12 @@ export const spendFactionResources = (factionId, cost = {}) => {
   }
 
   adjustFactionResources(factionId, {
-    gold: -normaliseAmount(cost.gold ?? 0),
-    metal: -normaliseAmount(cost.metal ?? 0),
+    inspiration: -normaliseAmount(cost.inspiration ?? 0),
+    will: -normaliseAmount(cost.will ?? 0),
   });
 
   return true;
 };
 
 export const getCapitalProductionForFaction = (factionId) =>
-  CAPITAL_PRODUCTION[factionId] ?? { gold: 2, metal: 1 };
+  CAPITAL_PRODUCTION[factionId] ?? { inspiration: 2, will: 1 };

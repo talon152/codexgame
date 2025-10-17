@@ -15,8 +15,8 @@
 - Resource counters in the sidebar mirror the active faction's reserves, while the overlay selector can toggle per-cell income highlights for quick scanning.【F:index.html†L71-L142】【F:script.js†L282-L293】【F:script.js†L132-L139】【F:script.js†L3041-L3048】
 
 ## Units & Recruitment
-- Army data modules expose detailed rosters for the Sun, Moon, Ember, and Tide factions, and are cached so recruited units can diverge from their templates.【F:data/armies/index.js†L1-L12】【F:data/armies/sun.js†L1-L101】【F:data/armies/moon.js†L1-L99】【F:data/armies/ember.js†L1-L101】【F:data/armies/tide.js†L1-L99】
-- Independent unit tables supply neutral defenders that are instantiated across non-capital tiles after setup to contest expansion.【F:data/independent-units.js†L1-L189】【F:script.js†L2567-L2591】
+- Army data modules expose detailed rosters for the Joy, Fear, Anger, and Envy factions, and are cached so recruited units can diverge from their templates.【F:data/armies/index.js†L1-L12】【F:data/armies/joy.js†L1-L101】【F:data/armies/fear.js†L1-L99】【F:data/armies/anger.js†L1-L102】【F:data/armies/envy.js†L1-L97】
+- Independent unit tables supply neutral defenders that are instantiated across non-capital tiles after setup to contest expansion.【F:data/independent-units.js†L1-L289】【F:script.js†L2567-L2591】
 - Recruiting opens a faction-specific modal, checks affordability, enforces capital-only placement during the Main phase, spends resources, and injects the new unit into the selected stack with feedback messaging.【F:script.js†L640-L759】【F:script.js†L2834-L2879】
 
 ## Movement & Control

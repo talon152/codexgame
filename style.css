@@ -424,27 +424,27 @@ body.modal-open {
   --capital-badge-text: #1b1b1b;
 }
 
-.cell--owner-sun {
-  --owner-overlay: rgba(255, 196, 0, 0.42);
-  --owner-border: rgba(255, 196, 0, 0.8);
-  --owner-glow: rgba(255, 196, 0, 0.55);
-  --capital-border: rgba(255, 196, 0, 0.85);
-  --capital-glow: rgba(255, 196, 0, 0.55);
-  --capital-badge-bg: rgba(255, 196, 0, 0.95);
-  --capital-badge-text: #3d2a00;
+.cell--owner-joy {
+  --owner-overlay: rgba(255, 205, 86, 0.45);
+  --owner-border: rgba(255, 205, 86, 0.8);
+  --owner-glow: rgba(255, 205, 86, 0.55);
+  --capital-border: rgba(255, 205, 86, 0.88);
+  --capital-glow: rgba(255, 205, 86, 0.58);
+  --capital-badge-bg: rgba(255, 205, 86, 0.95);
+  --capital-badge-text: #3a2900;
 }
 
-.cell--owner-moon {
-  --owner-overlay: rgba(108, 99, 255, 0.4);
-  --owner-border: rgba(108, 99, 255, 0.75);
-  --owner-glow: rgba(108, 99, 255, 0.5);
-  --capital-border: rgba(108, 99, 255, 0.85);
-  --capital-glow: rgba(108, 99, 255, 0.55);
-  --capital-badge-bg: rgba(108, 99, 255, 0.9);
-  --capital-badge-text: #f5f3ff;
+.cell--owner-fear {
+  --owner-overlay: rgba(103, 95, 205, 0.42);
+  --owner-border: rgba(103, 95, 205, 0.78);
+  --owner-glow: rgba(103, 95, 205, 0.52);
+  --capital-border: rgba(103, 95, 205, 0.85);
+  --capital-glow: rgba(103, 95, 205, 0.55);
+  --capital-badge-bg: rgba(103, 95, 205, 0.92);
+  --capital-badge-text: #f3f2ff;
 }
 
-.cell--owner-ember {
+.cell--owner-anger {
   --owner-overlay: rgba(230, 82, 65, 0.42);
   --owner-border: rgba(230, 82, 65, 0.78);
   --owner-glow: rgba(230, 82, 65, 0.52);
@@ -454,14 +454,14 @@ body.modal-open {
   --capital-badge-text: #fff5f2;
 }
 
-.cell--owner-tide {
-  --owner-overlay: rgba(56, 162, 173, 0.38);
-  --owner-border: rgba(56, 162, 173, 0.75);
-  --owner-glow: rgba(56, 162, 173, 0.48);
-  --capital-border: rgba(56, 162, 173, 0.85);
-  --capital-glow: rgba(56, 162, 173, 0.55);
-  --capital-badge-bg: rgba(56, 162, 173, 0.92);
-  --capital-badge-text: #002b32;
+.cell--owner-envy {
+  --owner-overlay: rgba(87, 204, 153, 0.42);
+  --owner-border: rgba(87, 204, 153, 0.78);
+  --owner-glow: rgba(87, 204, 153, 0.5);
+  --capital-border: rgba(87, 204, 153, 0.85);
+  --capital-glow: rgba(87, 204, 153, 0.55);
+  --capital-badge-bg: rgba(87, 204, 153, 0.92);
+  --capital-badge-text: #063422;
 }
 
 .cell--owner-independent {
@@ -586,14 +586,14 @@ body.modal-open {
   text-transform: uppercase;
 }
 
-.cell-resource-badge[data-resource="gold"] {
+.cell-resource-badge[data-resource="inspiration"] {
   background: rgba(236, 181, 67, 0.75);
   color: #3c2a00;
 }
 
-.cell-resource-badge[data-resource="metal"] {
-  background: rgba(164, 176, 190, 0.75);
-  color: #14212f;
+.cell-resource-badge[data-resource="will"] {
+  background: rgba(132, 146, 166, 0.75);
+  color: #f1f3f5;
 }
 
 .cell:hover {
@@ -857,20 +857,20 @@ body.modal-open {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45);
 }
 
-.faction-sun {
-  background: linear-gradient(135deg, #f6bd60, #f28482);
+.faction-joy {
+  background: linear-gradient(135deg, #ffd166, #f3722c);
 }
 
-.faction-moon {
-  background: linear-gradient(135deg, #7f8fd7, #495099);
+.faction-fear {
+  background: linear-gradient(135deg, #766cf1, #343a8b);
 }
 
-.faction-ember {
-  background: linear-gradient(135deg, #ff8c5a, #d93b3b);
+.faction-anger {
+  background: linear-gradient(135deg, #ff8c5a, #d62839);
 }
 
-.faction-tide {
-  background: linear-gradient(135deg, #3db7d3, #2167a8);
+.faction-envy {
+  background: linear-gradient(135deg, #57cc99, #2a9d8f);
 }
 
 .turn-counter {
@@ -912,8 +912,8 @@ body.modal-open {
   color: rgba(29, 53, 87, 0.9);
 }
 
-.resource-counter--gold::before,
-.resource-counter--metal::before {
+.resource-counter--inspiration::before,
+.resource-counter--will::before {
   content: "";
   display: inline-block;
   width: 0.7rem;
@@ -923,12 +923,12 @@ body.modal-open {
   vertical-align: middle;
 }
 
-.resource-counter--gold::before {
+.resource-counter--inspiration::before {
   background: linear-gradient(135deg, #ffd166, #f6ae2d);
 }
 
-.resource-counter--metal::before {
-  background: linear-gradient(135deg, #ced4da, #adb5bd);
+.resource-counter--will::before {
+  background: linear-gradient(135deg, #8791a1, #495057);
 }
 
 .phase-name {
@@ -1025,14 +1025,14 @@ body.modal-open {
   text-transform: uppercase;
 }
 
-.resource-item[data-resource="gold"] {
+.resource-item[data-resource="inspiration"] {
   background: rgba(236, 181, 67, 0.22);
   color: #7b4b00;
 }
 
-.resource-item[data-resource="metal"] {
-  background: rgba(164, 176, 190, 0.25);
-  color: #283442;
+.resource-item[data-resource="will"] {
+  background: rgba(132, 146, 166, 0.28);
+  color: #1f2a34;
 }
 
 .unit-list {
@@ -1155,14 +1155,14 @@ body.modal-open {
   text-transform: uppercase;
 }
 
-.unit-cost__badge[data-resource="gold"] {
+.unit-cost__badge[data-resource="inspiration"] {
   background: rgba(236, 181, 67, 0.22);
   color: #7b4b00;
 }
 
-.unit-cost__badge[data-resource="metal"] {
-  background: rgba(164, 176, 190, 0.25);
-  color: #283442;
+.unit-cost__badge[data-resource="will"] {
+  background: rgba(132, 146, 166, 0.28);
+  color: #1f2a34;
 }
 
 .unit-list .unit-description {
