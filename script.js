@@ -22,10 +22,20 @@ const selectionGuidance = document.getElementById("selection-guidance");
 const resourceGoldDisplay = document.getElementById("resource-gold");
 const resourceMetalDisplay = document.getElementById("resource-metal");
 const capitalGuidance = document.getElementById("capital-guidance");
+const provinceUnitList = document.getElementById("province-unit-list");
+const provinceUnitSummary = document.getElementById("province-unit-summary");
 const unitModal = document.getElementById("unit-modal");
 const unitModalList = document.getElementById("unit-modal-list");
 const unitModalCloseButton = document.getElementById("unit-modal-close");
 const unitModalFactionLabel = document.getElementById("unit-modal-faction");
+const unitDetailModal = document.getElementById("unit-detail-modal");
+const unitDetailCloseButton = document.getElementById("unit-detail-close");
+const unitDetailTitle = document.getElementById("unit-detail-title");
+const unitDetailFaction = document.getElementById("unit-detail-faction");
+const unitDetailRole = document.getElementById("unit-detail-role");
+const unitDetailLocation = document.getElementById("unit-detail-location");
+const unitDetailDescription = document.getElementById("unit-detail-description");
+const unitDetailStats = document.getElementById("unit-detail-stats");
 const armySelectorModal = document.getElementById("army-selector-modal");
 const armySelectorForm = document.getElementById("army-selector-form");
 const firstArmySelect = document.getElementById("first-army-select");
@@ -128,6 +138,9 @@ const movementState = {
 
 const DEFAULT_SELECTION_MESSAGE =
   selectionGuidance?.textContent?.trim() ?? "Select a cell to manage forces.";
+const DEFAULT_PROVINCE_SUMMARY =
+  provinceUnitSummary?.textContent?.trim() ??
+  "Select a province to review stationed forces.";
 
 const applyOverlaySelection = (value) => {
   const overlay = value ?? "none";
@@ -617,6 +630,17 @@ const createUnitStatsRow = (stats) => {
   });
 
   return statsRow;
+};
+
+const createCondensedUnitStat = (label, value) => {
+  if (typeof value !== "number") {
+    return null;
+  }
+
+  const stat = document.createElement("span");
+  stat.className = "province-unit-card__stat";
+  stat.textContent = `${label} ${value}`;
+  return stat;
 };
 
 const createResourceBadge = (resourceKey, quantity, {
@@ -1243,6 +1267,33 @@ const advancePhase = async () => {
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
 
+const buildProvinceSummary = (cell, row, col) => {
+  const summaryParts = [];
+  const terrainLabel = cell?.dataset?.terrainLabel;
+  const coordinatesLabel = formatCoordinates(row, col);
+  summaryParts.push(
+    terrainLabel ? `${terrainLabel} — ${coordinatesLabel}` : coordinatesLabel,
+  );
+
+  const capitalOwnerId = cell?.dataset?.capitalFaction;
+  if (capitalOwnerId) {
+    const capitalOwner = getFactionById(capitalOwnerId);
+    const capitalName = capitalOwner?.name ?? capitalOwnerId;
+    summaryParts.push(`Capital of ${capitalName}`);
+  }
+
+  const ownerId = cell?.dataset?.ownerFaction;
+  if (ownerId) {
+    const owner = getFactionById(ownerId);
+    const ownerName = owner?.name ?? ownerId;
+    summaryParts.push(`Controlled by ${ownerName}`);
+  } else if (!capitalOwnerId) {
+    summaryParts.push("Unclaimed province");
+  }
+
+  return summaryParts.join(" • ");
+};
+
 const getFactionById = (id) => {
   if (id === INDEPENDENT_FACTION_ID) {
     return INDEPENDENT_FACTION;
@@ -1288,6 +1339,7 @@ const wait = (ms) =>
 let helpReturnFocusElement = null;
 let battleReturnFocusElement = null;
 let unitModalReturnFocusElement = null;
+let unitDetailReturnFocusElement = null;
 
 const isModalVisible = (modalElement) =>
   Boolean(modalElement) &&
@@ -1298,6 +1350,7 @@ const syncBodyModalState = () => {
     isModalVisible(helpModal) ||
     isModalVisible(battleModal) ||
     isModalVisible(unitModal) ||
+    isModalVisible(unitDetailModal) ||
     isModalVisible(armySelectorModal)
   ) {
     document.body.classList.add("modal-open");
@@ -1405,6 +1458,96 @@ const closeUnitModal = () => {
   }
 
   unitModalReturnFocusElement = null;
+};
+
+const populateUnitDetailModal = (unit, locationText) => {
+  if (!unitDetailModal) {
+    return;
+  }
+
+  const faction = unit ? getFactionById(unit.factionId) : null;
+  const factionName =
+    faction?.name ?? unit?.factionId ?? INDEPENDENT_FACTION?.name ?? "Independent";
+
+  if (unitDetailTitle) {
+    unitDetailTitle.textContent = unit?.name ?? "Unknown unit";
+  }
+
+  if (unitDetailFaction) {
+    unitDetailFaction.textContent = `Faction — ${factionName}`;
+  }
+
+  if (unitDetailRole) {
+    if (unit?.role) {
+      unitDetailRole.textContent = unit.role;
+      unitDetailRole.hidden = false;
+    } else {
+      unitDetailRole.textContent = "";
+      unitDetailRole.hidden = true;
+    }
+  }
+
+  if (unitDetailLocation) {
+    if (locationText) {
+      unitDetailLocation.textContent = locationText;
+      unitDetailLocation.hidden = false;
+    } else {
+      unitDetailLocation.textContent = "";
+      unitDetailLocation.hidden = true;
+    }
+  }
+
+  if (unitDetailStats) {
+    unitDetailStats.innerHTML = "";
+    unitDetailStats.appendChild(createUnitStatsRow(unit?.stats ?? {}));
+  }
+
+  if (unitDetailDescription) {
+    unitDetailDescription.textContent =
+      unit?.description ?? "No additional details available.";
+  }
+};
+
+const openUnitDetailModal = (unit, { trigger, location } = {}) => {
+  if (!unitDetailModal) {
+    return;
+  }
+
+  populateUnitDetailModal(unit, location);
+
+  unitDetailReturnFocusElement =
+    trigger instanceof HTMLElement
+      ? trigger
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+  unitDetailModal.hidden = false;
+  unitDetailModal.setAttribute("aria-hidden", "false");
+  syncBodyModalState();
+
+  const focusTarget =
+    unitDetailCloseButton ?? unitDetailModal.querySelector("button, [tabindex]");
+  focusTarget?.focus({ preventScroll: true });
+};
+
+const closeUnitDetailModal = () => {
+  if (!unitDetailModal) {
+    return;
+  }
+
+  unitDetailModal.hidden = true;
+  unitDetailModal.setAttribute("aria-hidden", "true");
+  syncBodyModalState();
+
+  if (
+    unitDetailReturnFocusElement instanceof HTMLElement &&
+    document.contains(unitDetailReturnFocusElement)
+  ) {
+    unitDetailReturnFocusElement.focus({ preventScroll: true });
+  }
+
+  unitDetailReturnFocusElement = null;
 };
 
 const focusAdjacentHelpTab = (currentIndex, offset) => {
@@ -2606,6 +2749,139 @@ const completeCapitalSelection = () => {
   runStartPhase();
 };
 
+const renderProvinceUnitList = (cell, units = null) => {
+  if (!provinceUnitList) {
+    return;
+  }
+
+  provinceUnitList.innerHTML = "";
+
+  if (!cell) {
+    if (provinceUnitSummary) {
+      provinceUnitSummary.textContent = DEFAULT_PROVINCE_SUMMARY;
+    }
+
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "province-unit-empty";
+    emptyMessage.textContent = DEFAULT_PROVINCE_SUMMARY;
+    provinceUnitList.appendChild(emptyMessage);
+    return;
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    if (provinceUnitSummary) {
+      provinceUnitSummary.textContent = DEFAULT_PROVINCE_SUMMARY;
+    }
+
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "province-unit-empty";
+    emptyMessage.textContent = DEFAULT_PROVINCE_SUMMARY;
+    provinceUnitList.appendChild(emptyMessage);
+    return;
+  }
+
+  const { row, col } = coordinates;
+  const provinceSummary = buildProvinceSummary(cell, row, col);
+  const provinceUnits = Array.isArray(units) ? units : getUnitsForCell(row, col);
+
+  if (provinceUnitSummary) {
+    if (provinceUnits.length > 0) {
+      const unitCountLabel =
+        provinceUnits.length === 1
+          ? "1 unit stationed"
+          : `${provinceUnits.length} units stationed`;
+      provinceUnitSummary.textContent = `${unitCountLabel} — ${provinceSummary}`;
+    } else {
+      provinceUnitSummary.textContent = `No units stationed — ${provinceSummary}`;
+    }
+  }
+
+  if (provinceUnits.length === 0) {
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "province-unit-empty";
+    emptyMessage.textContent = "No units stationed in this province.";
+    provinceUnitList.appendChild(emptyMessage);
+    return;
+  }
+
+  provinceUnits.forEach((unit) => {
+    const card = document.createElement("li");
+    card.className = "province-unit-card";
+
+    const header = document.createElement("div");
+    header.className = "province-unit-card__header";
+
+    const name = document.createElement("span");
+    name.className = "province-unit-card__name";
+    name.textContent = unit.name ?? "Unknown unit";
+    header.appendChild(name);
+
+    const detailsButton = document.createElement("button");
+    detailsButton.type = "button";
+    detailsButton.className = "province-unit-card__details";
+    detailsButton.setAttribute(
+      "aria-label",
+      `View details for ${unit.name ?? "unit"}`,
+    );
+
+    const detailsIcon = document.createElement("span");
+    detailsIcon.className = "province-unit-card__details-icon";
+    detailsIcon.setAttribute("aria-hidden", "true");
+    detailsIcon.textContent = "ⓘ";
+    detailsButton.appendChild(detailsIcon);
+
+    header.appendChild(detailsButton);
+    card.appendChild(header);
+
+    const metaRow = document.createElement("div");
+    metaRow.className = "province-unit-card__meta";
+
+    if (unit.role) {
+      const role = document.createElement("span");
+      role.textContent = unit.role;
+      metaRow.appendChild(role);
+    }
+
+    const faction = getFactionById(unit.factionId);
+    const factionName =
+      faction?.name ?? unit.factionId ?? INDEPENDENT_FACTION?.name ?? "Independent";
+    const factionLabel = document.createElement("span");
+    factionLabel.textContent = factionName;
+    metaRow.appendChild(factionLabel);
+
+    if (metaRow.childElementCount > 0) {
+      card.appendChild(metaRow);
+    }
+
+    const statsRow = document.createElement("div");
+    statsRow.className = "province-unit-card__stats";
+
+    [
+      createCondensedUnitStat("HP", unit.stats?.hp),
+      createCondensedUnitStat("STR", unit.stats?.strength),
+      createCondensedUnitStat("DEF", unit.stats?.defence),
+    ].forEach((stat) => {
+      if (stat) {
+        statsRow.appendChild(stat);
+      }
+    });
+
+    if (statsRow.childElementCount > 0) {
+      card.appendChild(statsRow);
+    }
+
+    detailsButton.addEventListener("click", () => {
+      openUnitDetailModal(unit, {
+        trigger: detailsButton,
+        location: provinceSummary,
+      });
+    });
+
+    provinceUnitList.appendChild(card);
+  });
+};
+
 const renderCellResourceList = (cell) => {
   if (!cellResourceList) {
     return;
@@ -2729,6 +3005,7 @@ const renderSelectedCellDetails = (cell) => {
   if (!cell) {
     selectedCellDisplay.textContent = "None";
     renderCellResourceList(null);
+    renderProvinceUnitList(null);
     cellUnitList.innerHTML = "";
     const promptItem = document.createElement("li");
     promptItem.className = "unit-empty";
@@ -2736,6 +3013,7 @@ const renderSelectedCellDetails = (cell) => {
     cellUnitList.appendChild(promptItem);
     resetMovementState();
     closeUnitModal();
+    closeUnitDetailModal();
     selectedUnitIds.clear();
     lastRenderedCellKey = null;
     updateActionButtonsAvailability();
@@ -2747,11 +3025,13 @@ const renderSelectedCellDetails = (cell) => {
   if (!coordinates) {
     selectedCellDisplay.textContent = "None";
     renderCellResourceList(null);
+    renderProvinceUnitList(null);
     cellUnitList.innerHTML = "";
     resetMovementState();
     selectedUnitIds.clear();
     lastRenderedCellKey = null;
     closeUnitModal();
+    closeUnitDetailModal();
     updateActionButtonsAvailability();
     setSelectionGuidance(DEFAULT_SELECTION_MESSAGE);
     return;
@@ -2763,6 +3043,7 @@ const renderSelectedCellDetails = (cell) => {
     selectedUnitIds.clear();
     resetMovementState();
     lastRenderedCellKey = currentKey;
+    closeUnitDetailModal();
   }
 
   const { row, col } = coordinates;
@@ -2789,6 +3070,7 @@ const renderSelectedCellDetails = (cell) => {
   selectedCellDisplay.textContent = selectedText;
 
   const units = getUnitsForCell(row, col);
+  renderProvinceUnitList(cell, units);
   renderCellResourceList(cell);
   updateCellUnitStack(cell, units);
   renderCellUnitList(row, col);
@@ -3104,6 +3386,18 @@ if (unitModal) {
   });
 }
 
+if (unitDetailCloseButton) {
+  unitDetailCloseButton.addEventListener("click", closeUnitDetailModal);
+}
+
+if (unitDetailModal) {
+  unitDetailModal.addEventListener("click", (event) => {
+    if (event.target === unitDetailModal) {
+      closeUnitDetailModal();
+    }
+  });
+}
+
 if (armySelectorForm) {
   armySelectorForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -3172,6 +3466,12 @@ document.addEventListener("keydown", (event) => {
   if (unitModal && unitModal.getAttribute("aria-hidden") === "false") {
     event.preventDefault();
     closeUnitModal();
+    return;
+  }
+
+  if (unitDetailModal && unitDetailModal.getAttribute("aria-hidden") === "false") {
+    event.preventDefault();
+    closeUnitDetailModal();
     return;
   }
 
