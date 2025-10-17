@@ -22,14 +22,27 @@
             <p id="phase-name" class="phase-name"></p>
             <p id="phase-summary" class="phase-summary"></p>
           </div>
-          <button
-            id="help-button"
-            type="button"
-            class="help-button"
-            aria-haspopup="dialog"
-          >
-            Help
-          </button>
+          <div class="panel-header__actions">
+            <label class="overlay-select" for="overlay-select">
+              <span class="overlay-select__label">Overlay</span>
+              <select
+                id="overlay-select"
+                class="overlay-select__control"
+                aria-label="Map overlay options"
+              >
+                <option value="none" selected>None</option>
+                <option value="resources">Resources</option>
+              </select>
+            </label>
+            <button
+              id="help-button"
+              type="button"
+              class="help-button"
+              aria-haspopup="dialog"
+            >
+              Help
+            </button>
+          </div>
         </header>
         <p
           id="capital-guidance"
