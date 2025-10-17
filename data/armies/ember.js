@@ -20,7 +20,7 @@ export const emberArmy = {
       terrainModifiers: {
         mountain: { attack: 2 },
       },
-      stats: { strength: 7, attack: 7, defence: 5, hp: 17, initiative: 6 },
+      stats: { strength: 7, attack: 7, defence: 5, hp: 17, initiative: 6, movement: 4 },
       cost: { gold: 2, metal: 2 },
     },
     {
@@ -39,7 +39,7 @@ export const emberArmy = {
         plain: { attack: 2 },
         water: { attack: -2 },
       },
-      stats: { strength: 5, attack: 8, defence: 3, hp: 13, initiative: 7 },
+      stats: { strength: 5, attack: 8, defence: 3, hp: 13, initiative: 7, movement: 3 },
       cost: { gold: 2, metal: 1 },
     },
     {
@@ -57,7 +57,7 @@ export const emberArmy = {
       terrainModifiers: {
         swamp: { attack: 2 },
       },
-      stats: { strength: 6, attack: 7, defence: 4, hp: 15, initiative: 8 },
+      stats: { strength: 6, attack: 7, defence: 4, hp: 15, initiative: 8, movement: 4 },
       cost: { gold: 2, metal: 2 },
     },
     {
@@ -75,7 +75,7 @@ export const emberArmy = {
       terrainModifiers: {
         mountain: { defence: 2 },
       },
-      stats: { strength: 8, attack: 5, defence: 7, hp: 21, initiative: 4 },
+      stats: { strength: 8, attack: 5, defence: 7, hp: 21, initiative: 4, movement: 2 },
       cost: { gold: 1, metal: 4 },
     },
     {
@@ -94,7 +94,7 @@ export const emberArmy = {
         plain: { initiative: 2 },
         forest: { initiative: -1 },
       },
-      stats: { strength: 6, attack: 7, defence: 4, hp: 16, initiative: 9 },
+      stats: { strength: 6, attack: 7, defence: 4, hp: 16, initiative: 9, movement: 6 },
       cost: { gold: 3, metal: 1 },
     },
   ],

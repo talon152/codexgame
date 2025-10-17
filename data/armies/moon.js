@@ -20,7 +20,7 @@ export const moonArmy = {
       terrainModifiers: {
         village: { attack: 2 },
       },
-      stats: { strength: 7, attack: 9, defence: 4, hp: 14, initiative: 9 },
+      stats: { strength: 7, attack: 9, defence: 4, hp: 14, initiative: 9, movement: 5 },
       cost: { gold: 2, metal: 2 },
     },
     {
@@ -38,7 +38,7 @@ export const moonArmy = {
       terrainModifiers: {
         forest: { defence: 3 },
       },
-      stats: { strength: 6, attack: 5, defence: 8, hp: 19, initiative: 5 },
+      stats: { strength: 6, attack: 5, defence: 8, hp: 19, initiative: 5, movement: 2 },
       cost: { gold: 1, metal: 3 },
     },
     {
@@ -56,7 +56,7 @@ export const moonArmy = {
       terrainModifiers: {
         water: { attack: 2 },
       },
-      stats: { strength: 5, attack: 7, defence: 5, hp: 16, initiative: 6 },
+      stats: { strength: 5, attack: 7, defence: 5, hp: 16, initiative: 6, movement: 4 },
       cost: { gold: 2, metal: 1 },
     },
     {
@@ -74,7 +74,7 @@ export const moonArmy = {
       terrainModifiers: {
         swamp: { initiative: 2 },
       },
-      stats: { strength: 6, attack: 8, defence: 5, hp: 17, initiative: 8 },
+      stats: { strength: 6, attack: 8, defence: 5, hp: 17, initiative: 8, movement: 6 },
       cost: { gold: 3, metal: 1 },
     },
     {
@@ -92,7 +92,7 @@ export const moonArmy = {
       terrainModifiers: {
         mountain: { attack: 2 },
       },
-      stats: { strength: 8, attack: 7, defence: 6, hp: 18, initiative: 6 },
+      stats: { strength: 8, attack: 7, defence: 6, hp: 18, initiative: 6, movement: 3 },
       cost: { gold: 1, metal: 4 },
     },
   ],

@@ -44,6 +44,27 @@
             ></span>
             <p id="turn-counter" class="turn-counter"></p>
           </div>
+          <div class="resource-summary" aria-live="polite">
+            <p class="resource-summary__title">Resources</p>
+            <div class="resource-summary__row">
+              <span
+                id="resource-gold"
+                class="resource-counter resource-counter--gold"
+                role="status"
+                aria-live="polite"
+              >
+                Gold: 0
+              </span>
+              <span
+                id="resource-metal"
+                class="resource-counter resource-counter--metal"
+                role="status"
+                aria-live="polite"
+              >
+                Metal: 0
+              </span>
+            </div>
+          </div>
           <p id="phase-name" class="phase-name"></p>
           <p id="phase-summary" class="phase-summary"></p>
           <ol id="phase-list" class="phase-list" aria-label="Phases this turn"></ol>
@@ -72,20 +93,34 @@
               aria-label="Units in the selected cell"
             ></ul>
           </div>
-        </section>
-        <section class="debug-panel" aria-label="Debug controls">
-          <h2>Debug Tools</h2>
-          <p class="debug-panel__description">
-            Prototype helpers that ignore resource costs.
-          </p>
-          <button
-            id="add-unit-button"
-            type="button"
-            class="add-unit-button"
-            disabled
-          >
-            Add Units
-          </button>
+          <div class="selection-actions">
+            <p
+              id="selection-guidance"
+              class="selection-guidance"
+              role="status"
+              aria-live="polite"
+            >
+              Select a cell to manage forces.
+            </p>
+            <div class="selection-actions__buttons">
+              <button
+                id="buy-unit-button"
+                type="button"
+                class="action-button action-button--primary"
+                disabled
+              >
+                Recruit Units
+              </button>
+              <button
+                id="move-units-button"
+                type="button"
+                class="action-button"
+                disabled
+              >
+                Move Units
+              </button>
+            </div>
+          </div>
         </section>
       </aside>
     </main>

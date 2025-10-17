@@ -21,7 +21,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       mountain: { defence: 2 },
     },
-    stats: { strength: 6, attack: 5, defence: 6, hp: 18, initiative: 5 },
+    stats: { strength: 6, attack: 5, defence: 6, hp: 18, initiative: 5, movement: 3 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -39,7 +39,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       forest: { attack: 2, initiative: 1 },
     },
-    stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7 },
+    stats: { strength: 5, attack: 7, defence: 3, hp: 14, initiative: 7, movement: 4 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -58,7 +58,7 @@ export const INDEPENDENT_UNITS = [
       swamp: { initiative: 2 },
       water: { initiative: 2 },
     },
-    stats: { strength: 4, attack: 5, defence: 3, hp: 12, initiative: 8 },
+    stats: { strength: 4, attack: 5, defence: 3, hp: 12, initiative: 8, movement: 5 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -73,7 +73,7 @@ export const INDEPENDENT_UNITS = [
       "Crushing Blows: High STR turns every swing into a potential breach.",
       "Lumbering Form: Low INIT leaves openings for faster foes.",
     ],
-    stats: { strength: 9, attack: 7, defence: 4, hp: 22, initiative: 3 },
+    stats: { strength: 9, attack: 7, defence: 4, hp: 22, initiative: 3, movement: 2 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -91,7 +91,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       village: { defence: 2 },
     },
-    stats: { strength: 6, attack: 6, defence: 6, hp: 16, initiative: 6 },
+    stats: { strength: 6, attack: 6, defence: 6, hp: 16, initiative: 6, movement: 3 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -109,7 +109,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       plain: { attack: 1, initiative: 1 },
     },
-    stats: { strength: 5, attack: 6, defence: 4, hp: 13, initiative: 7 },
+    stats: { strength: 5, attack: 6, defence: 4, hp: 13, initiative: 7, movement: 5 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -127,7 +127,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       water: { attack: 2 },
     },
-    stats: { strength: 4, attack: 8, defence: 3, hp: 13, initiative: 6 },
+    stats: { strength: 4, attack: 8, defence: 3, hp: 13, initiative: 6, movement: 3 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -146,7 +146,7 @@ export const INDEPENDENT_UNITS = [
       swamp: { defence: 3 },
       mountain: { initiative: -1 },
     },
-    stats: { strength: 8, attack: 6, defence: 7, hp: 24, initiative: 4 },
+    stats: { strength: 8, attack: 6, defence: 7, hp: 24, initiative: 4, movement: 2 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -165,7 +165,7 @@ export const INDEPENDENT_UNITS = [
       forest: { strength: 2 },
       village: { strength: 2 },
     },
-    stats: { strength: 6, attack: 7, defence: 3, hp: 15, initiative: 6 },
+    stats: { strength: 6, attack: 7, defence: 3, hp: 15, initiative: 6, movement: 4 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -184,7 +184,7 @@ export const INDEPENDENT_UNITS = [
       plain: { initiative: 2 },
       village: { initiative: 2 },
     },
-    stats: { strength: 4, attack: 6, defence: 3, hp: 11, initiative: 9 },
+    stats: { strength: 4, attack: 6, defence: 3, hp: 11, initiative: 9, movement: 6 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -202,7 +202,7 @@ export const INDEPENDENT_UNITS = [
     terrainModifiers: {
       water: { attack: 1, defence: 1 },
     },
-    stats: { strength: 6, attack: 6, defence: 5, hp: 16, initiative: 5 },
+    stats: { strength: 6, attack: 6, defence: 5, hp: 16, initiative: 5, movement: 3 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -222,7 +222,7 @@ export const INDEPENDENT_UNITS = [
       village: { attack: 2 },
       plain: { defence: -1 },
     },
-    stats: { strength: 5, attack: 8, defence: 3, hp: 12, initiative: 8 },
+    stats: { strength: 5, attack: 8, defence: 3, hp: 12, initiative: 8, movement: 5 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -241,7 +241,7 @@ export const INDEPENDENT_UNITS = [
       forest: { defence: 3 },
       swamp: { strength: 2 },
     },
-    stats: { strength: 8, attack: 6, defence: 8, hp: 26, initiative: 2 },
+    stats: { strength: 8, attack: 6, defence: 8, hp: 26, initiative: 2, movement: 1 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -260,7 +260,7 @@ export const INDEPENDENT_UNITS = [
       water: { defence: 2 },
       mountain: { defence: 2 },
     },
-    stats: { strength: 4, attack: 6, defence: 5, hp: 14, initiative: 5 },
+    stats: { strength: 4, attack: 6, defence: 5, hp: 14, initiative: 5, movement: 3 },
     cost: { gold: 0, metal: 0 },
   },
   {
@@ -275,7 +275,7 @@ export const INDEPENDENT_UNITS = [
       "Impassable Wall: Near-impenetrable defenses slow entire battalions.",
       "Arcane Core: Redirects magical assaults into radiant counterblows.",
     ],
-    stats: { strength: 7, attack: 4, defence: 9, hp: 28, initiative: 1 },
+    stats: { strength: 7, attack: 4, defence: 9, hp: 28, initiative: 1, movement: 0 },
     cost: { gold: 0, metal: 0 },
   },
 ];

@@ -1,26 +1,28 @@
 # Status Overview
 
 ## Turn Phases
-- The phase order is defined as Start, Main, and End, each with a short rules summary used to render the UI checklist.【F:script.js†L130-L159】
-- Starting a turn forces the state machine through the Start phase (handling regeneration) and then immediately advances to the Main phase for player actions.【F:script.js†L809-L821】
-- Ending a turn is only possible during the Main phase. Pressing "End Turn" pushes the game into combat resolution, advances the faction turn order, and loops back through the Start/Main cycle for the next round.【F:script.js†L823-L875】
+- The Start → Main → End sequence drives both the sidebar checklist and the internal phase index mapping.【F:script.js†L270-L288】
+- Each new turn awards capital income, applies regeneration, and then advances the active faction straight into the Main phase for player orders.【F:script.js†L96-L100】【F:script.js†L1040-L1082】
+- Ending a turn is only possible during the Main phase; selecting it resolves any contested cells, rotates the active faction, increments the turn counter, and restarts the loop.【F:script.js†L1085-L1136】
 
 ## Units
-- Army rosters live in the `data/armies` folder; each faction provides a list of unit templates with roles, trait text, terrain modifiers, stats, and costs that feed the roster picker and debug deployment tools.【F:data/armies/sun.js†L1-L100】
-- During army selection the chosen rosters are cached per faction, and every deployed stack clones one of these templates into a tracked instance (with unique IDs, stats, terrain modifiers, and costs) so battles can mutate HP without touching the source data.【F:script.js†L582-L605】【F:script.js†L1628-L1689】
-- Neutral forces now use a dedicated independent roster containing fifteen unique unit types with their own terrain bonuses and statlines. These templates drive the neutral armies that occupy the map at setup.【F:data/independent-units.js†L1-L289】
+- Army rosters (Sun, Moon, Ember, Tide) and the independent dossier include movement values, terrain perks, and recruitment costs consumed by the UI.【F:data/armies/sun.js†L1-L115】【F:data/armies/moon.js†L1-L115】【F:data/armies/ember.js†L1-L165】【F:data/armies/tide.js†L1-L155】【F:data/independent-units.js†L1-L278】
+- Chosen armies cache their templates so each recruited unit becomes an independent instance whose stats can diverge in combat without mutating the source data.【F:script.js†L706-L752】【F:script.js†L1890-L1944】
+- The unit sidebar supports multi-select with inline movement previews, and movement orders always respect the slowest unit in the selected group.【F:script.js†L2437-L2516】【F:script.js†L2140-L2295】
 
 ## Combat
-- Battles trigger automatically on contested cells at end of turn. The resolver gathers all factions in the cell, builds the battle view, and applies any terrain modifiers before fighting.【F:script.js†L1238-L1305】【F:script.js†L1147-L1253】
-- Combat proceeds in initiative steps; units act from highest to lowest initiative, mark the acting cards, and queue damage against opposing forces before resolving it simultaneously.【F:script.js†L1369-L1498】
-- Damage is calculated from a unit’s attack plus half its strength (with random variance) against half the defender’s defence. Survivors remain on the tile, while defeated stacks are removed from both the board model and the UI.【F:script.js†L1373-L1451】【F:script.js†L1577-L1607】
+- Contested tiles automatically queue a battle at end of turn; the resolver builds a modal view, applies any terrain modifiers, and steps through the fight.【F:script.js†L1478-L1889】
+- Engagements iterate through initiative tiers, toggling active indicators, logging attack summaries, and applying simultaneous damage before checking for survivors.【F:script.js†L1676-L1784】
+- Results prune defeated units from both the board model and the rendered stack, then restore focus to the map for the next action.【F:script.js†L1786-L1868】
 
 ## Resources
-- Each terrain type defines gold and metal dice ranges, and grid generation rolls those ranges when a cell is created, storing the values on the DOM node for later reference.【F:script.js†L50-L127】【F:script.js†L1952-L1988】
-- Resource readouts pull the stored values into the sidebar; cells with no rolled output render a "No resources" placeholder.【F:script.js†L1703-L1751】
+- Terrain definitions seed gold/metal dice ranges, and grid generation rolls and stores those values on each cell for later retrieval.【F:script.js†L55-L157】【F:script.js†L1952-L2050】
+- The sidebar tracks faction stockpiles in real time, pairing the markup with dedicated styling and update hooks for accessibility announcements.【F:index.html†L47-L121】【F:style.css†L406-L455】【F:script.js†L242-L259】
+- Capitals now produce faction-specific income at the start of every turn before regeneration resolves, feeding directly into the resource tracker.【F:script.js†L96-L100】【F:script.js†L1040-L1082】
+- Recruiting units at a capital spends the appropriate gold/metal costs before adding the new instance to the selected stack.【F:script.js†L2579-L2624】
 
 ## Setup & Independent Control
-- When two armies are chosen the board resets, capital markers are cleared, and capital placement mode begins with faction order locked to the selection.【F:script.js†L582-L605】【F:script.js†L237-L254】
-- Each faction must click a valid capital on its assigned half of the map (west for the first player, east for the second). Invalid choices surface contextual guidance in the phase summary until a legal location is chosen.【F:script.js†L150-L188】【F:script.js†L1893-L1934】
-- After both capitals are set the mode ends, the turn track resumes, and every remaining cell is seeded with one or two independent units drawn at random from the neutral roster.【F:script.js†L1665-L1700】
-- Capital cells gain a visual badge and extra tooltip context so commanders can quickly spot the chosen strongholds during play.【F:script.js†L209-L235】【F:style.css†L128-L150】
+- Selecting armies resets the board, seeds faction rosters, and launches capital placement in the order the players chose their factions.【F:script.js†L706-L752】【F:script.js†L411-L455】
+- Each faction must claim a capital within its permitted zone (top third for the first picker, bottom third for the second); errors update both the summary text and the highlighted cells until a valid choice is made.【F:script.js†L318-L362】【F:script.js†L2669-L2710】
+- Once capitals are placed the map is repopulated with independent defenders and the first faction begins its start-of-turn income and regeneration sequence.【F:script.js†L2349-L2373】【F:script.js†L1040-L1082】
+- Capital tiles retain distinctive styling and tooltips so commanders can quickly spot their strongholds,【F:script.js†L214-L236】【F:style.css†L148-L170】 and movement targets are overlaid with their own highlight to clarify valid destinations.【F:script.js†L2140-L2199】【F:style.css†L148-L159】

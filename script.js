@@ -16,7 +16,11 @@ const phaseListElement = document.getElementById("phase-list");
 const advancePhaseButton = document.getElementById("advance-phase");
 const cellUnitList = document.getElementById("cell-unit-list");
 const cellResourceList = document.getElementById("cell-resource-list");
-const addUnitButton = document.getElementById("add-unit-button");
+const buyUnitButton = document.getElementById("buy-unit-button");
+const moveUnitsButton = document.getElementById("move-units-button");
+const selectionGuidance = document.getElementById("selection-guidance");
+const resourceGoldDisplay = document.getElementById("resource-gold");
+const resourceMetalDisplay = document.getElementById("resource-metal");
 const capitalGuidance = document.getElementById("capital-guidance");
 const unitModal = document.getElementById("unit-modal");
 const unitModalList = document.getElementById("unit-modal-list");
@@ -89,6 +93,13 @@ const RESOURCE_TYPES = [
   { key: "metal", label: "Metal" },
 ];
 
+const CAPITAL_PRODUCTION = {
+  sun: { gold: 4, metal: 1 },
+  moon: { gold: 3, metal: 2 },
+  ember: { gold: 2, metal: 3 },
+  tide: { gold: 3, metal: 1 },
+};
+
 const getRandomTerrain = () =>
   TERRAIN_TYPES[Math.floor(Math.random() * TERRAIN_TYPES.length)];
 
@@ -99,11 +110,28 @@ let unitInstanceCounter = 0;
 let isResolvingBattles = false;
 let factions = [];
 const unitRosters = new Map();
+const factionResources = new Map();
+const selectedUnitIds = new Set();
+let lastRenderedCellKey = null;
+
+const movementState = {
+  isActive: false,
+  originKey: null,
+  originCoords: null,
+  unitIds: [],
+  range: 0,
+  factionId: null,
+  targets: new Set(),
+};
+
+const DEFAULT_SELECTION_MESSAGE =
+  selectionGuidance?.textContent?.trim() ?? "Select a cell to manage forces.";
 
 const UNIT_STAT_LABELS = [
   { key: "strength", label: "STR" },
   { key: "attack", label: "ATK" },
   { key: "defence", label: "DEF" },
+  { key: "movement", label: "MOVE" },
   { key: "hp", label: "HP" },
   { key: "initiative", label: "INIT" },
 ];
@@ -126,6 +154,110 @@ const rollResourcesForTerrain = (terrainName) => {
       [key]: randomIntInclusive(range.min ?? 0, range.max ?? 0),
     };
   }, {});
+};
+
+const normaliseAmount = (value) => {
+  if (typeof value !== "number") {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return 0;
+    }
+    return Math.trunc(parsed);
+  }
+
+  return Number.isFinite(value) ? Math.trunc(value) : 0;
+};
+
+const getFactionResources = (factionId) => {
+  if (!factionId) {
+    return { gold: 0, metal: 0 };
+  }
+
+  const stored = factionResources.get(factionId);
+  if (!stored) {
+    const defaults = { gold: 0, metal: 0 };
+    factionResources.set(factionId, defaults);
+    return { ...defaults };
+  }
+
+  const gold = normaliseAmount(stored.gold ?? 0);
+  const metal = normaliseAmount(stored.metal ?? 0);
+  return { gold, metal };
+};
+
+const setFactionResources = (factionId, values) => {
+  if (!factionId) {
+    return;
+  }
+
+  const gold = Math.max(0, normaliseAmount(values?.gold ?? 0));
+  const metal = Math.max(0, normaliseAmount(values?.metal ?? 0));
+  factionResources.set(factionId, { gold, metal });
+};
+
+const adjustFactionResources = (factionId, delta) => {
+  if (!factionId) {
+    return { gold: 0, metal: 0 };
+  }
+
+  const current = getFactionResources(factionId);
+  const nextGold = Math.max(0, current.gold + normaliseAmount(delta?.gold ?? 0));
+  const nextMetal = Math.max(0, current.metal + normaliseAmount(delta?.metal ?? 0));
+  const nextResources = { gold: nextGold, metal: nextMetal };
+  setFactionResources(factionId, nextResources);
+  return nextResources;
+};
+
+const canFactionAfford = (factionId, cost = {}) => {
+  if (!factionId) {
+    return false;
+  }
+
+  const resources = getFactionResources(factionId);
+  return Object.entries(cost).every(([key, amount]) => {
+    const required = Math.max(0, normaliseAmount(amount ?? 0));
+    if (required === 0) {
+      return true;
+    }
+    return (resources[key] ?? 0) >= required;
+  });
+};
+
+const spendFactionResources = (factionId, cost = {}) => {
+  if (!canFactionAfford(factionId, cost)) {
+    return false;
+  }
+
+  adjustFactionResources(factionId, {
+    gold: -normaliseAmount(cost.gold ?? 0),
+    metal: -normaliseAmount(cost.metal ?? 0),
+  });
+
+  return true;
+};
+
+const getCapitalProductionForFaction = (factionId) =>
+  CAPITAL_PRODUCTION[factionId] ?? { gold: 2, metal: 1 };
+
+const setSelectionGuidance = (message = DEFAULT_SELECTION_MESSAGE) => {
+  if (!selectionGuidance) {
+    return;
+  }
+
+  selectionGuidance.textContent = message;
+};
+
+const updateResourceDisplay = () => {
+  const faction = getActiveFaction();
+  const resources = faction ? getFactionResources(faction.id) : { gold: 0, metal: 0 };
+
+  if (resourceGoldDisplay) {
+    resourceGoldDisplay.textContent = `Gold: ${resources.gold}`;
+  }
+
+  if (resourceMetalDisplay) {
+    resourceMetalDisplay.textContent = `Metal: ${resources.metal}`;
+  }
 };
 
 const TURN_PHASES = [
@@ -402,6 +534,7 @@ const updateFactionDisplay = () => {
     if (turnCounterDisplay) {
       turnCounterDisplay.textContent = "";
     }
+    updateResourceDisplay();
     return;
   }
 
@@ -411,6 +544,8 @@ const updateFactionDisplay = () => {
   if (turnCounterDisplay) {
     turnCounterDisplay.textContent = `Turn ${turnState.turnNumber}`;
   }
+
+  updateResourceDisplay();
 };
 
 const isMainPhaseActive = () =>
@@ -437,7 +572,11 @@ const updateAdvanceButton = () => {
   );
 
   const shouldDisable =
-    !hasFactions || isResolvingBattles || !mainPhaseActive || isCapitalSelectionActive();
+    !hasFactions ||
+    isResolvingBattles ||
+    !mainPhaseActive ||
+    isCapitalSelectionActive() ||
+    movementState.isActive;
   advancePhaseButton.disabled = shouldDisable;
 };
 
@@ -544,6 +683,12 @@ const renderUnitModalOptions = () => {
     selectButton.type = "button";
     selectButton.className = "unit-modal-option";
     selectButton.dataset.unitId = unit.id;
+    const canAfford = canFactionAfford(activeFaction.id, unit.cost);
+    selectButton.disabled = !canAfford;
+    if (!canAfford) {
+      selectButton.setAttribute("aria-disabled", "true");
+      listItem.classList.add("unit-modal-item--disabled");
+    }
 
     const summaryRow = document.createElement("div");
     summaryRow.className = "unit-modal-summary";
@@ -568,11 +713,18 @@ const renderUnitModalOptions = () => {
 
     selectButton.append(summaryRow, costRow, statsRow, description);
     selectButton.addEventListener("click", () => {
-      handleAddUnitToSelectedCell(activeFaction.id, unit);
-      closeUnitModal();
+      if (selectButton.disabled) {
+        setSelectionGuidance("Not enough resources to recruit that unit.");
+        return;
+      }
+
+      const recruited = handleAddUnitToSelectedCell(activeFaction.id, unit);
+      if (recruited) {
+        renderUnitModalOptions();
+      }
     });
 
-    if (!firstButton) {
+    if (!selectButton.disabled && !firstButton) {
       firstButton = selectButton;
     }
 
@@ -652,6 +804,9 @@ let hasInitialisedArmySelector = false;
 
 const resetBoardState = () => {
   boardUnits.clear();
+  selectedUnitIds.clear();
+  lastRenderedCellKey = null;
+  resetMovementState();
 
   if (!mapGrid) {
     return;
@@ -665,6 +820,7 @@ const resetBoardState = () => {
   mapGrid.querySelectorAll(".cell").forEach((cell) => {
     cell.classList.remove("cell--capital");
     cell.classList.remove("cell--capital-eligible");
+    cell.classList.remove("cell--movement-target");
     delete cell.dataset.capitalFaction;
     delete cell.dataset.capitalName;
     const badge = cell.querySelector(".cell-capital-badge");
@@ -795,9 +951,11 @@ const applyArmySelection = (armyIds) => {
 
   factions = selectedArmies.map((army) => army.faction);
   unitRosters.clear();
+  factionResources.clear();
 
   selectedArmies.forEach((army) => {
     unitRosters.set(army.faction.id, Array.isArray(army.roster) ? army.roster : []);
+    setFactionResources(army.faction.id, { gold: 0, metal: 0 });
   });
 
   turnState.turnNumber = 1;
@@ -814,6 +972,7 @@ const applyArmySelection = (armyIds) => {
 
   selectedCell = null;
   renderSelectedCellDetails(null);
+  updateResourceDisplay();
   beginCapitalSelection();
 };
 
@@ -878,6 +1037,22 @@ const applyStartPhaseRegeneration = () => {
   });
 };
 
+const collectCapitalIncomeForActiveFaction = () => {
+  const faction = getActiveFaction();
+  if (!faction) {
+    return null;
+  }
+
+  if (!capitalAssignments.has(faction.id)) {
+    return null;
+  }
+
+  const production = getCapitalProductionForFaction(faction.id);
+  adjustFactionResources(faction.id, production);
+  updateResourceDisplay();
+  return production;
+};
+
 const runStartPhase = () => {
   if (factions.length === 0) {
     updateTurnDisplay();
@@ -885,11 +1060,26 @@ const runStartPhase = () => {
   }
 
   turnState.currentPhaseIndex = START_PHASE_INDEX;
+  const production = collectCapitalIncomeForActiveFaction();
   applyStartPhaseRegeneration();
   updateTurnDisplay();
+  if (production && phaseSummaryDisplay) {
+    const parts = [];
+    if (production.gold > 0) {
+      parts.push(`${production.gold} gold`);
+    }
+    if (production.metal > 0) {
+      parts.push(`${production.metal} metal`);
+    }
+    if (parts.length > 0) {
+      const summaryText = phaseSummaryDisplay.textContent ?? "";
+      phaseSummaryDisplay.textContent = `${summaryText} Capital yields ${parts.join(" and ")}.`;
+    }
+  }
 
   turnState.currentPhaseIndex = MAIN_PHASE_INDEX;
   updateTurnDisplay();
+  refreshSelectionStatus();
 };
 
 const advancePhase = async () => {
@@ -1075,7 +1265,7 @@ const closeHelpModal = () => {
 };
 
 const openUnitModal = () => {
-  if (!unitModal || !selectedCell || addUnitButton.disabled) {
+  if (!unitModal || !selectedCell || buyUnitButton?.disabled) {
     return;
   }
 
@@ -1734,6 +1924,428 @@ const updateCellUnitStack = (cell, units) => {
   }
 };
 
+const clearMovementHighlights = () => {
+  if (!mapGrid) {
+    return;
+  }
+
+  mapGrid.querySelectorAll(".cell--movement-target").forEach((cell) => {
+    cell.classList.remove("cell--movement-target");
+  });
+};
+
+const resetMovementState = () => {
+  movementState.isActive = false;
+  movementState.originKey = null;
+  movementState.originCoords = null;
+  movementState.unitIds = [];
+  movementState.range = 0;
+  movementState.factionId = null;
+  movementState.targets.clear();
+  clearMovementHighlights();
+
+  if (moveUnitsButton) {
+    moveUnitsButton.textContent = "Move Units";
+    moveUnitsButton.classList.remove("action-button--primary");
+  }
+
+  updateActionButtonsAvailability();
+};
+
+const getSelectedUnitsForCell = (row, col) => {
+  const units = getUnitsForCell(row, col);
+  if (units.length === 0 || selectedUnitIds.size === 0) {
+    return [];
+  }
+
+  return units.filter((unit) => selectedUnitIds.has(unit.instanceId));
+};
+
+const updateActionButtonsAvailability = () => {
+  if (!buyUnitButton && !moveUnitsButton) {
+    return;
+  }
+
+  if (movementState.isActive) {
+    if (buyUnitButton) {
+      buyUnitButton.disabled = true;
+    }
+
+    if (moveUnitsButton) {
+      moveUnitsButton.disabled = false;
+      moveUnitsButton.textContent = "Cancel Move";
+      moveUnitsButton.classList.add("action-button--primary");
+    }
+    return;
+  }
+
+  if (moveUnitsButton) {
+    moveUnitsButton.textContent = "Move Units";
+    moveUnitsButton.classList.remove("action-button--primary");
+  }
+
+  if (!selectedCell) {
+    if (buyUnitButton) {
+      buyUnitButton.disabled = true;
+    }
+    if (moveUnitsButton) {
+      moveUnitsButton.disabled = true;
+    }
+    return;
+  }
+
+  const activeFaction = getActiveFaction();
+  const hasActiveFaction = Boolean(activeFaction);
+  const coordinates = getCellCoordinates(selectedCell);
+
+  if (!coordinates) {
+    if (buyUnitButton) {
+      buyUnitButton.disabled = true;
+    }
+    if (moveUnitsButton) {
+      moveUnitsButton.disabled = true;
+    }
+    return;
+  }
+
+  const units = getUnitsForCell(coordinates.row, coordinates.col);
+  const friendlyUnits = hasActiveFaction
+    ? units.filter((unit) => unit.factionId === activeFaction.id)
+    : [];
+
+  const isCapital =
+    hasActiveFaction &&
+    selectedCell.dataset.capitalFaction === activeFaction.id;
+  const canRecruit = hasActiveFaction && isMainPhaseActive() && isCapital;
+  if (buyUnitButton) {
+    buyUnitButton.disabled = !canRecruit;
+  }
+
+  if (moveUnitsButton) {
+    const canMove =
+      hasActiveFaction && isMainPhaseActive() && friendlyUnits.length > 0;
+    moveUnitsButton.disabled = !canMove;
+  }
+};
+
+const refreshSelectionStatus = () => {
+  if (!selectionGuidance) {
+    return;
+  }
+
+  if (movementState.isActive) {
+    const range = movementState.range;
+    const label = range === 1 ? "space" : "spaces";
+    setSelectionGuidance(`Choose a destination within ${range} ${label}.`);
+    return;
+  }
+
+  if (!selectedCell) {
+    setSelectionGuidance(DEFAULT_SELECTION_MESSAGE);
+    return;
+  }
+
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    setSelectionGuidance(DEFAULT_SELECTION_MESSAGE);
+    return;
+  }
+
+  const selectedUnits = getSelectedUnitsForCell(coordinates.row, coordinates.col);
+  if (selectedUnits.length === 0) {
+    const activeFaction = getActiveFaction();
+    const isCapital =
+      activeFaction &&
+      selectedCell.dataset.capitalFaction === activeFaction.id;
+    if (isCapital) {
+      setSelectionGuidance("Recruit new units here or select troops to move.");
+    } else {
+      setSelectionGuidance("Select friendly units to form a movement group.");
+    }
+    return;
+  }
+
+  const range = selectedUnits.reduce((slowest, unit) => {
+    const movement = Number(unit.stats?.movement ?? 0);
+    if (!Number.isFinite(movement) || movement <= 0) {
+      return Math.min(slowest, 0);
+    }
+    return Math.min(slowest, movement);
+  }, Number.POSITIVE_INFINITY);
+
+  if (!Number.isFinite(range) || range <= 0) {
+    setSelectionGuidance(
+      `Selected ${selectedUnits.length} unit${selectedUnits.length === 1 ? "" : "s"}, but they cannot move.`,
+    );
+    return;
+  }
+
+  const label = range === 1 ? "space" : "spaces";
+  setSelectionGuidance(
+    `Selected ${selectedUnits.length} unit${selectedUnits.length === 1 ? "" : "s"} — slowest movement ${range} ${label}.`,
+  );
+};
+
+const getReachableCells = (row, col, range, factionId) => {
+  const maxRange = Number(range);
+  if (!Number.isFinite(maxRange) || maxRange <= 0) {
+    return [];
+  }
+
+  const results = [];
+  for (let r = 0; r < GRID_SIZE; r += 1) {
+    for (let c = 0; c < GRID_SIZE; c += 1) {
+      const distance = Math.abs(row - r) + Math.abs(col - c);
+      if (distance === 0 || distance > maxRange) {
+        continue;
+      }
+
+      const occupants = getUnitsForCell(r, c);
+      const hasEnemyUnits = occupants.some((unit) => unit.factionId !== factionId);
+      if (hasEnemyUnits) {
+        continue;
+      }
+
+      results.push({ row: r, col: c, key: getCellKey(r, c) });
+    }
+  }
+
+  return results;
+};
+
+const highlightMovementTargets = (targets) => {
+  clearMovementHighlights();
+  targets.forEach(({ row, col }) => {
+    const cell = getCellElementAt(row, col);
+    if (cell) {
+      cell.classList.add("cell--movement-target");
+    }
+  });
+};
+
+const beginUnitMovement = () => {
+  if (movementState.isActive) {
+    resetMovementState();
+    refreshSelectionStatus();
+    return;
+  }
+
+  if (!selectedCell) {
+    setSelectionGuidance("Select a friendly cell before moving units.");
+    return;
+  }
+
+  const activeFaction = getActiveFaction();
+  if (!activeFaction) {
+    setSelectionGuidance("Select armies to begin before issuing movement orders.");
+    return;
+  }
+
+  if (!isMainPhaseActive()) {
+    setSelectionGuidance("Units can only move during the main phase.");
+    return;
+  }
+
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    setSelectionGuidance("Select a valid cell before moving units.");
+    return;
+  }
+
+  const selectedUnits = getSelectedUnitsForCell(coordinates.row, coordinates.col).filter(
+    (unit) => unit.factionId === activeFaction.id,
+  );
+
+  if (selectedUnits.length === 0) {
+    setSelectionGuidance("Select one or more of your units first.");
+    return;
+  }
+
+  const range = selectedUnits.reduce((slowest, unit) => {
+    const movement = Number(unit.stats?.movement ?? 0);
+    if (!Number.isFinite(movement) || movement <= 0) {
+      return Math.min(slowest, 0);
+    }
+    return Math.min(slowest, movement);
+  }, Number.POSITIVE_INFINITY);
+
+  if (!Number.isFinite(range) || range <= 0) {
+    setSelectionGuidance("The selected group cannot move.");
+    return;
+  }
+
+  const reachable = getReachableCells(
+    coordinates.row,
+    coordinates.col,
+    range,
+    activeFaction.id,
+  );
+
+  if (reachable.length === 0) {
+    setSelectionGuidance("No valid destinations within range.");
+    return;
+  }
+
+  movementState.isActive = true;
+  movementState.originKey = getCellKey(coordinates.row, coordinates.col);
+  movementState.originCoords = coordinates;
+  movementState.unitIds = selectedUnits.map((unit) => unit.instanceId);
+  movementState.range = range;
+  movementState.factionId = activeFaction.id;
+  movementState.targets = new Set(reachable.map(({ key }) => key));
+
+  highlightMovementTargets(reachable);
+  updateActionButtonsAvailability();
+
+  const label = range === 1 ? "space" : "spaces";
+  setSelectionGuidance(`Choose a destination within ${range} ${label}.`);
+};
+
+const tryHandleMovementClick = (cell) => {
+  if (!movementState.isActive) {
+    return false;
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    return true;
+  }
+
+  const targetKey = getCellKey(coordinates.row, coordinates.col);
+
+  if (targetKey === movementState.originKey) {
+    resetMovementState();
+    refreshSelectionStatus();
+    return true;
+  }
+
+  if (!movementState.targets.has(targetKey)) {
+    setSelectionGuidance("That destination is out of range.");
+    return true;
+  }
+
+  executeMovementTo(cell, coordinates);
+  return true;
+};
+
+const executeMovementTo = (targetCell, targetCoords) => {
+  if (
+    !movementState.isActive ||
+    !movementState.originCoords ||
+    movementState.unitIds.length === 0
+  ) {
+    resetMovementState();
+    refreshSelectionStatus();
+    return;
+  }
+
+  const originRow = movementState.originCoords.row;
+  const originCol = movementState.originCoords.col;
+  const originUnits = getUnitsForCell(originRow, originCol);
+  const unitsToMove = originUnits.filter((unit) =>
+    movementState.unitIds.includes(unit.instanceId),
+  );
+
+  if (unitsToMove.length === 0) {
+    resetMovementState();
+    refreshSelectionStatus();
+    return;
+  }
+
+  const remainingUnits = originUnits.filter(
+    (unit) => !movementState.unitIds.includes(unit.instanceId),
+  );
+  const movedUnitIds = unitsToMove.map((unit) => unit.instanceId);
+  setUnitsForCell(originRow, originCol, remainingUnits);
+
+  const destinationUnits = [
+    ...getUnitsForCell(targetCoords.row, targetCoords.col),
+    ...unitsToMove,
+  ];
+  setUnitsForCell(targetCoords.row, targetCoords.col, destinationUnits);
+
+  const originCellElement = getCellElementAt(originRow, originCol);
+  if (originCellElement) {
+    updateCellUnitStack(originCellElement, remainingUnits);
+  }
+  updateCellUnitStack(targetCell, destinationUnits);
+
+  const movedCount = unitsToMove.length;
+  const moveRange = movementState.range;
+  resetMovementState();
+  selectedUnitIds.clear();
+  movedUnitIds.forEach((id) => selectedUnitIds.add(id));
+
+  if (selectedCell) {
+    selectedCell.classList.remove("selected");
+    selectedCell.setAttribute("aria-selected", "false");
+  }
+
+  selectedCell = targetCell;
+  selectedCell.classList.add("selected");
+  selectedCell.setAttribute("aria-selected", "true");
+  selectedCell.focus({ preventScroll: true });
+  lastRenderedCellKey = getCellKey(targetCoords.row, targetCoords.col);
+  renderSelectedCellDetails(targetCell);
+
+  setSelectionGuidance(
+    `Moved ${movedCount} unit${movedCount === 1 ? "" : "s"} up to ${moveRange} ${
+      moveRange === 1 ? "space" : "spaces"
+    }.`,
+  );
+};
+
+const toggleUnitSelection = (unitId, { element, button } = {}) => {
+  if (!selectedCell) {
+    setSelectionGuidance("Select a friendly cell first.");
+    return;
+  }
+
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    return;
+  }
+
+  const units = getUnitsForCell(coordinates.row, coordinates.col);
+  const unit = units.find((candidate) => candidate.instanceId === unitId);
+  if (!unit) {
+    return;
+  }
+
+  if (movementState.isActive) {
+    setSelectionGuidance("Finish the current move before adjusting selection.");
+    return;
+  }
+
+  const activeFaction = getActiveFaction();
+  if (!activeFaction || unit.factionId !== activeFaction.id) {
+    setSelectionGuidance("Only your units can be selected for movement.");
+    return;
+  }
+
+  if (!isMainPhaseActive()) {
+    setSelectionGuidance("Units can only move during the main phase.");
+    return;
+  }
+
+  const isSelected = selectedUnitIds.has(unitId);
+  if (isSelected) {
+    selectedUnitIds.delete(unitId);
+  } else {
+    selectedUnitIds.add(unitId);
+  }
+
+  if (element) {
+    element.classList.toggle("is-selected", !isSelected);
+  }
+
+  if (button) {
+    button.textContent = !isSelected ? "Selected" : "Select";
+  }
+
+  refreshSelectionStatus();
+};
+
 const populateIndependentCells = () => {
   if (!mapGrid) {
     return;
@@ -1834,21 +2446,23 @@ const renderCellUnitList = (row, col) => {
     return;
   }
 
-  const grouped = units.reduce((accumulator, unit) => {
-    const key = `${unit.templateId}-${unit.factionId}`;
-    const existing = accumulator.get(key);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      accumulator.set(key, { unit, count: 1 });
+  const validIds = new Set(units.map((unit) => unit.instanceId));
+  Array.from(selectedUnitIds).forEach((unitId) => {
+    if (!validIds.has(unitId)) {
+      selectedUnitIds.delete(unitId);
     }
-    return accumulator;
-  }, new Map());
+  });
 
-  grouped.forEach(({ unit, count }) => {
+  units.forEach((unit) => {
     const faction = getFactionById(unit.factionId);
     const listItem = document.createElement("li");
     listItem.className = "unit-card";
+    listItem.dataset.unitId = unit.instanceId;
+
+    const isSelected = selectedUnitIds.has(unit.instanceId);
+    if (isSelected) {
+      listItem.classList.add("is-selected");
+    }
 
     const header = document.createElement("div");
     header.className = "unit-card__header";
@@ -1856,12 +2470,13 @@ const renderCellUnitList = (row, col) => {
     const nameLabel = document.createElement("span");
     nameLabel.className = "unit-name";
     nameLabel.textContent = unit.name;
+    header.appendChild(nameLabel);
 
-    const quantityBadge = document.createElement("span");
-    quantityBadge.className = "unit-quantity";
-    quantityBadge.textContent = `×${count}`;
-
-    header.append(nameLabel, quantityBadge);
+    const selectButton = document.createElement("button");
+    selectButton.type = "button";
+    selectButton.className = "unit-card__select";
+    selectButton.textContent = isSelected ? "Selected" : "Select";
+    header.appendChild(selectButton);
     listItem.appendChild(header);
 
     if (unit.role) {
@@ -1879,16 +2494,24 @@ const renderCellUnitList = (row, col) => {
     const statsRow = createUnitStatsRow(unit.stats);
     listItem.appendChild(statsRow);
 
-    if (unit.cost) {
-      listItem.appendChild(createCostBadges(unit.cost));
-    }
-
     if (unit.description) {
       const description = document.createElement("span");
       description.className = "unit-description";
       description.textContent = unit.description;
       listItem.appendChild(description);
     }
+
+    const toggle = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleUnitSelection(unit.instanceId, {
+        element: listItem,
+        button: selectButton,
+      });
+    };
+
+    selectButton.addEventListener("click", toggle);
+    listItem.addEventListener("click", toggle);
 
     cellUnitList.appendChild(listItem);
   });
@@ -1901,10 +2524,14 @@ const renderSelectedCellDetails = (cell) => {
     cellUnitList.innerHTML = "";
     const promptItem = document.createElement("li");
     promptItem.className = "unit-empty";
-    promptItem.textContent = "Select a cell to view or add units.";
+    promptItem.textContent = "Select a cell to manage forces.";
     cellUnitList.appendChild(promptItem);
-    addUnitButton.disabled = true;
+    resetMovementState();
     closeUnitModal();
+    selectedUnitIds.clear();
+    lastRenderedCellKey = null;
+    updateActionButtonsAvailability();
+    setSelectionGuidance(DEFAULT_SELECTION_MESSAGE);
     return;
   }
 
@@ -1912,9 +2539,22 @@ const renderSelectedCellDetails = (cell) => {
   if (!coordinates) {
     selectedCellDisplay.textContent = "None";
     renderCellResourceList(null);
-    addUnitButton.disabled = true;
+    cellUnitList.innerHTML = "";
+    resetMovementState();
+    selectedUnitIds.clear();
+    lastRenderedCellKey = null;
     closeUnitModal();
+    updateActionButtonsAvailability();
+    setSelectionGuidance(DEFAULT_SELECTION_MESSAGE);
     return;
+  }
+
+  const currentKey = getCellKey(coordinates.row, coordinates.col);
+  const isNewCell = currentKey !== lastRenderedCellKey;
+  if (isNewCell) {
+    selectedUnitIds.clear();
+    resetMovementState();
+    lastRenderedCellKey = currentKey;
   }
 
   const { row, col } = coordinates;
@@ -1927,39 +2567,62 @@ const renderSelectedCellDetails = (cell) => {
     selectedText += ` — Capital of ${capitalName}`;
   }
   selectedCellDisplay.textContent = selectedText;
-  const hasActiveFaction = Boolean(getActiveFaction());
-  const canInteract = hasActiveFaction && isMainPhaseActive();
-  addUnitButton.disabled = !canInteract;
-  if (!canInteract) {
-    closeUnitModal();
-  }
+
   const units = getUnitsForCell(row, col);
   renderCellResourceList(cell);
   updateCellUnitStack(cell, units);
   renderCellUnitList(row, col);
+  updateActionButtonsAvailability();
+  refreshSelectionStatus();
 };
 
 const handleAddUnitToSelectedCell = (factionId, template) => {
   if (!selectedCell) {
-    return;
+    setSelectionGuidance("Select your capital before recruiting units.");
+    return false;
   }
 
   const activeFaction = getActiveFaction();
   if (!activeFaction || factionId !== activeFaction.id) {
-    return;
+    setSelectionGuidance("Only the active faction can recruit units right now.");
+    return false;
+  }
+
+  if (!isMainPhaseActive()) {
+    setSelectionGuidance("Recruitment is only available during the main phase.");
+    return false;
   }
 
   const coordinates = getCellCoordinates(selectedCell);
   if (!coordinates) {
-    return;
+    return false;
   }
+
+  const isCapital =
+    selectedCell.dataset.capitalFaction === activeFaction.id;
+  if (!isCapital) {
+    setSelectionGuidance("Recruitment can only occur at your capital.");
+    return false;
+  }
+
+  const cost = template.cost ?? {};
+  if (!spendFactionResources(factionId, cost)) {
+    setSelectionGuidance("Not enough resources to recruit that unit.");
+    return false;
+  }
+
+  updateResourceDisplay();
 
   const { row, col } = coordinates;
   const existingUnits = [...getUnitsForCell(row, col)];
   const unitInstance = createUnitInstance(factionId, template);
   existingUnits.push(unitInstance);
   setUnitsForCell(row, col, existingUnits);
+  selectedUnitIds.add(unitInstance.instanceId);
   renderSelectedCellDetails(selectedCell);
+
+  setSelectionGuidance(`${template.name} recruited successfully.`);
+  return true;
 };
 
 const attemptCapitalSelection = (cell) => {
@@ -2007,6 +2670,23 @@ const attemptCapitalSelection = (cell) => {
 };
 
 const handleSelect = (cell) => {
+  if (!cell) {
+    return;
+  }
+
+  if (movementState.isActive) {
+    const handled = tryHandleMovementClick(cell);
+    if (handled) {
+      return;
+    }
+  }
+
+  if (selectedCell === cell) {
+    renderSelectedCellDetails(cell);
+    attemptCapitalSelection(cell);
+    return;
+  }
+
   if (selectedCell) {
     selectedCell.classList.remove("selected");
     selectedCell.setAttribute("aria-selected", "false");
@@ -2110,11 +2790,15 @@ if (battleSpeedControl) {
 }
 
 advancePhaseButton.addEventListener("click", advancePhase);
-addUnitButton.addEventListener("click", () => {
-  if (addUnitButton.disabled) {
+buyUnitButton?.addEventListener("click", () => {
+  if (buyUnitButton.disabled) {
     return;
   }
   openUnitModal();
+});
+
+moveUnitsButton?.addEventListener("click", () => {
+  beginUnitMovement();
 });
 
 if (helpButton) {
