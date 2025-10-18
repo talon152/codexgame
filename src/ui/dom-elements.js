@@ -18,6 +18,9 @@ export const resourceWillDisplay = document.getElementById("resource-will");
 export const capitalGuidance = document.getElementById("capital-guidance");
 export const provinceUnitList = document.getElementById("province-unit-list");
 export const provinceUnitSummary = document.getElementById("province-unit-summary");
+export const provinceSelectAllButton = document.getElementById(
+  "province-select-all",
+);
 export const unitModal = document.getElementById("unit-modal");
 export const unitModalList = document.getElementById("unit-modal-list");
 export const unitModalCloseButton = document.getElementById("unit-modal-close");

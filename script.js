@@ -32,6 +32,7 @@ import {
   capitalGuidance,
   provinceUnitList,
   provinceUnitSummary,
+  provinceSelectAllButton,
   unitModal,
   unitModalList,
   unitModalCloseButton,
@@ -1475,21 +1476,28 @@ const updateBattleSpeedDisplay = () => {
   battleSpeedValue.textContent = `${formatSpeedMultiplier(multiplier)}x`;
 };
 
+const resolveBattleLogContainer = () => {
+  const element =
+    battleLogEntries ?? document.getElementById("battle-log-entries");
+  return element instanceof HTMLElement ? element : null;
+};
+
 const appendBattleLog = (message) => {
-  if (!battleLogEntries) {
+  const logContainer = resolveBattleLogContainer();
+  if (!logContainer) {
     return;
   }
 
   const entry = document.createElement("li");
   entry.textContent = message;
-  battleLogEntries.appendChild(entry);
+  logContainer.appendChild(entry);
 
   const maxEntries = 60;
-  while (battleLogEntries.children.length > maxEntries) {
-    battleLogEntries.removeChild(battleLogEntries.firstChild);
+  while (logContainer.children.length > maxEntries) {
+    logContainer.removeChild(logContainer.firstChild);
   }
 
-  battleLogEntries.scrollTop = battleLogEntries.scrollHeight;
+  logContainer.scrollTop = logContainer.scrollHeight;
 };
 
 const getCellElementAt = (row, col) => {
@@ -1926,8 +1934,9 @@ const openBattleModal = ({
     battleBottomList.innerHTML = "";
   }
 
-  if (battleLogEntries) {
-    battleLogEntries.innerHTML = "";
+  const logContainer = resolveBattleLogContainer();
+  if (logContainer) {
+    logContainer.innerHTML = "";
   }
 
   if (battleTopLabel) {
@@ -2395,6 +2404,7 @@ const resetMovementState = () => {
   }
 
   updateActionButtonsAvailability();
+  updateProvinceSelectAllButtonState();
 };
 
 const getSelectedUnitsForCell = (row, col) => {
@@ -2404,6 +2414,126 @@ const getSelectedUnitsForCell = (row, col) => {
   }
 
   return units.filter((unit) => selectedUnitIds.has(unit.instanceId));
+};
+
+const applyStackSelectionState = (element, button, unitsForCard = []) => {
+  const totalUnits = Array.isArray(unitsForCard) ? unitsForCard.length : 0;
+  const selectedCount =
+    totalUnits === 0
+      ? 0
+      : unitsForCard.reduce(
+          (count, unit) =>
+            selectedUnitIds.has(unit.instanceId) ? count + 1 : count,
+          0,
+        );
+
+  const allSelected = totalUnits > 0 && selectedCount === totalUnits;
+  const partiallySelected =
+    totalUnits > 0 && selectedCount > 0 && selectedCount < totalUnits;
+
+  if (element) {
+    element.classList.toggle("province-unit-card--selected", allSelected);
+    element.classList.toggle("province-unit-card--partial", partiallySelected);
+  }
+
+  if (button) {
+    if (allSelected) {
+      button.textContent =
+        totalUnits > 1 ? `Selected (${totalUnits})` : "Selected";
+      button.setAttribute("aria-pressed", "true");
+    } else if (partiallySelected) {
+      button.textContent = `Selected (${selectedCount}/${totalUnits})`;
+      button.setAttribute("aria-pressed", "false");
+    } else {
+      button.textContent = totalUnits > 1 ? `Select (${totalUnits})` : "Select";
+      button.setAttribute("aria-pressed", "false");
+    }
+  }
+};
+
+const updateProvinceSelectAllButtonState = ({
+  cell = selectedCell,
+  units = null,
+} = {}) => {
+  if (!provinceSelectAllButton) {
+    return;
+  }
+
+  const activeFaction = getActiveFaction();
+  const effectiveCell = cell ?? selectedCell;
+  const coordinates =
+    effectiveCell instanceof HTMLElement ? getCellCoordinates(effectiveCell) : null;
+
+  const provinceUnits = Array.isArray(units)
+    ? units
+    : coordinates
+    ? getUnitsForCell(coordinates.row, coordinates.col)
+    : [];
+
+  const friendlyUnits = Array.isArray(provinceUnits) && activeFaction
+    ? provinceUnits.filter((unit) => unit.factionId === activeFaction.id)
+    : [];
+
+  const friendlyCount = friendlyUnits.length;
+  const selectedFriendlyCount = friendlyUnits.reduce(
+    (count, unit) => (selectedUnitIds.has(unit.instanceId) ? count + 1 : count),
+    0,
+  );
+
+  const canModifySelection =
+    Boolean(activeFaction) &&
+    Boolean(coordinates) &&
+    isMainPhaseActive() &&
+    !movementState.isActive &&
+    friendlyCount > 0;
+
+  provinceSelectAllButton.disabled = !canModifySelection;
+
+  const allSelected =
+    canModifySelection && friendlyCount > 0 && selectedFriendlyCount === friendlyCount;
+  const hasPartialSelection =
+    canModifySelection &&
+    selectedFriendlyCount > 0 &&
+    selectedFriendlyCount < friendlyCount;
+
+  if (allSelected) {
+    provinceSelectAllButton.textContent = `Clear selection (${friendlyCount})`;
+  } else if (hasPartialSelection) {
+    const remaining = friendlyCount - selectedFriendlyCount;
+    provinceSelectAllButton.textContent = `Select all (${remaining} remaining)`;
+  } else if (friendlyCount > 0) {
+    provinceSelectAllButton.textContent =
+      friendlyCount === 1 ? "Select all (1)" : `Select all (${friendlyCount})`;
+  } else {
+    provinceSelectAllButton.textContent = "Select all";
+  }
+
+  provinceSelectAllButton.classList.toggle(
+    "is-clear-mode",
+    Boolean(allSelected),
+  );
+  provinceSelectAllButton.setAttribute(
+    "aria-pressed",
+    allSelected ? "true" : "false",
+  );
+
+  const countLabel =
+    friendlyCount > 0
+      ? `${friendlyCount} unit${friendlyCount === 1 ? "" : "s"}`
+      : "units";
+
+  if (canModifySelection) {
+    const actionLabel = allSelected ? "Clear selection of" : "Select all";
+    provinceSelectAllButton.setAttribute(
+      "aria-label",
+      `${actionLabel} ${countLabel}`,
+    );
+  } else {
+    provinceSelectAllButton.setAttribute(
+      "aria-label",
+      `Select all ${countLabel} (unavailable)`,
+    );
+  }
 };
 
 const updateActionButtonsAvailability = () => {
@@ -2474,6 +2604,8 @@ const updateActionButtonsAvailability = () => {
 };
 
 const refreshSelectionStatus = () => {
+  updateProvinceSelectAllButtonState();
+
   if (!selectionGuidance) {
     return;
   }
@@ -2678,6 +2810,7 @@ const beginUnitMovement = () => {
 
   const label = range === 1 ? "space" : "spaces";
   setSelectionGuidance(`Choose a destination within ${range} ${label}.`);
+  updateProvinceSelectAllButtonState();
 };
 
 const tryHandleMovementClick = (cell) => {
@@ -2792,7 +2925,7 @@ const executeMovementTo = (targetCell, targetCoords) => {
   );
 };
 
-const toggleUnitSelection = (unitId, { element, button } = {}) => {
+const toggleUnitSelection = (unitIds, { element, button, unitsForCard } = {}) => {
   if (!selectedCell) {
     setSelectionGuidance("Select a friendly cell first.");
     return;
@@ -2804,8 +2937,12 @@ const toggleUnitSelection = (unitId, { element, button } = {}) => {
   }
 
   const units = getUnitsForCell(coordinates.row, coordinates.col);
-  const unit = units.find((candidate) => candidate.instanceId === unitId);
-  if (!unit) {
+  const ids = Array.isArray(unitIds) ? unitIds : [unitIds];
+  const foundUnits = ids
+    .map((id) => units.find((candidate) => candidate.instanceId === id))
+    .filter((unit) => Boolean(unit));
+
+  if (foundUnits.length === 0) {
     return;
   }
 
@@ -2815,7 +2952,10 @@ const toggleUnitSelection = (unitId, { element, button } = {}) => {
   }
 
   const activeFaction = getActiveFaction();
-  if (!activeFaction || unit.factionId !== activeFaction.id) {
+  if (
+    !activeFaction ||
+    foundUnits.some((unit) => unit.factionId !== activeFaction.id)
+  ) {
     setSelectionGuidance("Only your units can be selected for movement.");
     return;
   }
@@ -2825,20 +2965,25 @@ const toggleUnitSelection = (unitId, { element, button } = {}) => {
     return;
   }
 
-  const isSelected = selectedUnitIds.has(unitId);
-  if (isSelected) {
-    selectedUnitIds.delete(unitId);
-  } else {
-    selectedUnitIds.add(unitId);
-  }
+  const allSelected = foundUnits.every((unit) =>
+    selectedUnitIds.has(unit.instanceId),
+  );
 
-  if (element) {
-    element.classList.toggle("province-unit-card--selected", !isSelected);
-  }
+  foundUnits.forEach((unit) => {
+    if (allSelected) {
+      selectedUnitIds.delete(unit.instanceId);
+    } else {
+      selectedUnitIds.add(unit.instanceId);
+    }
+  });
 
-  if (button) {
-    button.textContent = !isSelected ? "Selected" : "Select";
-  }
+  applyStackSelectionState(
+    element,
+    button,
+    Array.isArray(unitsForCard) && unitsForCard.length > 0
+      ? unitsForCard
+      : foundUnits,
+  );
 
   refreshSelectionStatus();
 };
@@ -2881,6 +3026,45 @@ const completeCapitalSelection = () => {
   runStartPhase();
 };
 
+const createUnitStackKey = (unit) => {
+  if (!unit) {
+    return "unknown";
+  }
+
+  const stats = unit.stats ?? {};
+  const statsEntries = Object.keys(stats)
+    .sort((a, b) => a.localeCompare(b))
+    .map((stat) => {
+      const value = Number(stats[stat]);
+      return `${stat}:${Number.isFinite(value) ? value : 0}`;
+    })
+    .join("|");
+
+  const factionKey = unit.factionId ?? "neutral";
+  const templateKey = unit.templateId ?? unit.name ?? "unknown";
+  const roleKey = unit.role ?? "";
+
+  return `${factionKey}::${templateKey}::${roleKey}::${statsEntries}`;
+};
+
+const buildProvinceUnitStacks = (units) => {
+  const stacks = [];
+  const stackMap = new Map();
+
+  units.forEach((unit) => {
+    const key = createUnitStackKey(unit);
+    let stack = stackMap.get(key);
+    if (!stack) {
+      stack = { key, units: [], representative: unit };
+      stackMap.set(key, stack);
+      stacks.push(stack);
+    }
+    stack.units.push(unit);
+  });
+
+  return stacks;
+};
+
 const renderProvinceUnitList = (cell, units = null) => {
   if (!provinceUnitList) {
     return;
@@ -2897,6 +3081,7 @@ const renderProvinceUnitList = (cell, units = null) => {
     emptyMessage.className = "province-unit-empty";
     emptyMessage.textContent = DEFAULT_PROVINCE_SUMMARY;
     provinceUnitList.appendChild(emptyMessage);
+    updateProvinceSelectAllButtonState({ cell: null, units: [] });
     return;
   }
 
@@ -2910,6 +3095,7 @@ const renderProvinceUnitList = (cell, units = null) => {
     emptyMessage.className = "province-unit-empty";
     emptyMessage.textContent = DEFAULT_PROVINCE_SUMMARY;
     provinceUnitList.appendChild(emptyMessage);
+    updateProvinceSelectAllButtonState({ cell: null, units: [] });
     return;
   }
 
@@ -2925,6 +3111,9 @@ const renderProvinceUnitList = (cell, units = null) => {
   });
 
   const activeFaction = getActiveFaction();
+  const stacks = buildProvinceUnitStacks(provinceUnits);
+
+  updateProvinceSelectAllButtonState({ cell, units: provinceUnits });
 
   if (provinceUnitSummary) {
     if (provinceUnits.length > 0) {
@@ -2932,7 +3121,13 @@ const renderProvinceUnitList = (cell, units = null) => {
         provinceUnits.length === 1
           ? "1 unit stationed"
           : `${provinceUnits.length} units stationed`;
-      provinceUnitSummary.textContent = `${unitCountLabel} — ${provinceSummary}`;
+      const stackLabel =
+        stacks.length === provinceUnits.length
+          ? ""
+          : stacks.length === 1
+          ? " in 1 formation"
+          : ` in ${stacks.length} formations`;
+      provinceUnitSummary.textContent = `${unitCountLabel}${stackLabel} — ${provinceSummary}`;
     } else {
       provinceUnitSummary.textContent = `No units stationed — ${provinceSummary}`;
     }
@@ -2946,47 +3141,59 @@ const renderProvinceUnitList = (cell, units = null) => {
     return;
   }
 
-  provinceUnits.forEach((unit) => {
+  stacks.forEach(({ units: stackUnits, representative }) => {
     const card = document.createElement("li");
     card.className = "province-unit-card";
-    card.dataset.unitId = unit.instanceId;
+    card.dataset.unitId = representative.instanceId;
+    card.dataset.stackSize = stackUnits.length.toString();
 
     const isFriendly =
-      Boolean(activeFaction) && unit.factionId === activeFaction.id;
-    const isSelected = selectedUnitIds.has(unit.instanceId);
+      Boolean(activeFaction) && representative.factionId === activeFaction.id;
 
     if (isFriendly) {
       card.classList.add("province-unit-card--selectable");
     }
 
-    if (isSelected) {
-      card.classList.add("province-unit-card--selected");
-    }
-
     const header = document.createElement("div");
     header.className = "province-unit-card__header";
 
+    const titleGroup = document.createElement("div");
+    titleGroup.className = "province-unit-card__title";
+
     const name = document.createElement("span");
     name.className = "province-unit-card__name";
-    name.textContent = unit.name ?? "Unknown unit";
-    header.appendChild(name);
+    name.textContent = representative.name ?? "Unknown unit";
+    titleGroup.appendChild(name);
+
+    if (stackUnits.length > 1) {
+      const countBadge = document.createElement("span");
+      countBadge.className = "province-unit-card__count";
+      countBadge.textContent = `×${stackUnits.length}`;
+      titleGroup.appendChild(countBadge);
+    }
+
+    header.appendChild(titleGroup);
 
     const controls = document.createElement("div");
     controls.className = "province-unit-card__controls";
 
+    let selectButton = null;
     if (isFriendly) {
-      const selectButton = document.createElement("button");
+      selectButton = document.createElement("button");
       selectButton.type = "button";
       selectButton.className = "province-unit-card__select";
-      selectButton.textContent = isSelected ? "Selected" : "Select";
 
       const handleToggle = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        toggleUnitSelection(unit.instanceId, {
-          element: card,
-          button: selectButton,
-        });
+        toggleUnitSelection(
+          stackUnits.map((unit) => unit.instanceId),
+          {
+            element: card,
+            button: selectButton,
+            unitsForCard: stackUnits,
+          },
+        );
       };
 
       selectButton.addEventListener("click", handleToggle);
@@ -3005,7 +3212,7 @@ const renderProvinceUnitList = (cell, units = null) => {
     detailsButton.className = "province-unit-card__details";
     detailsButton.setAttribute(
       "aria-label",
-      `View details for ${unit.name ?? "unit"}`,
+      `View details for ${representative.name ?? "unit"}`,
     );
 
     const detailsIcon = document.createElement("span");
@@ -3021,15 +3228,15 @@ const renderProvinceUnitList = (cell, units = null) => {
     const metaRow = document.createElement("div");
     metaRow.className = "province-unit-card__meta";
 
-    if (unit.role) {
+    if (representative.role) {
       const role = document.createElement("span");
-      role.textContent = unit.role;
+      role.textContent = representative.role;
       metaRow.appendChild(role);
     }
 
-    const faction = getFactionById(unit.factionId);
+    const faction = getFactionById(representative.factionId);
     const factionName =
-      faction?.name ?? unit.factionId ?? INDEPENDENT_FACTION?.name ?? "Independent";
+      faction?.name ?? representative.factionId ?? INDEPENDENT_FACTION?.name ?? "Independent";
     const factionLabel = document.createElement("span");
     factionLabel.textContent = factionName;
     metaRow.appendChild(factionLabel);
@@ -3042,9 +3249,9 @@ const renderProvinceUnitList = (cell, units = null) => {
     statsRow.className = "province-unit-card__stats";
 
     [
-      createCondensedUnitStat("HP", unit.stats?.hp),
-      createCondensedUnitStat("STR", unit.stats?.strength),
-      createCondensedUnitStat("DEF", unit.stats?.defence),
+      createCondensedUnitStat("HP", representative.stats?.hp),
+      createCondensedUnitStat("STR", representative.stats?.strength),
+      createCondensedUnitStat("DEF", representative.stats?.defence),
     ].forEach((stat) => {
       if (stat) {
         statsRow.appendChild(stat);
@@ -3058,14 +3265,69 @@ const renderProvinceUnitList = (cell, units = null) => {
     detailsButton.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openUnitDetailModal(unit, {
+      openUnitDetailModal(representative, {
         trigger: detailsButton,
         location: provinceSummary,
       });
     });
 
+    applyStackSelectionState(card, selectButton, stackUnits);
     provinceUnitList.appendChild(card);
   });
+};
+
+const handleSelectAllUnits = () => {
+  if (!provinceSelectAllButton || provinceSelectAllButton.disabled) {
+    return;
+  }
+
+  if (!selectedCell) {
+    setSelectionGuidance("Select a friendly cell first.");
+    return;
+  }
+
+  if (movementState.isActive) {
+    setSelectionGuidance("Finish the current move before adjusting selection.");
+    return;
+  }
+
+  if (!isMainPhaseActive()) {
+    setSelectionGuidance("Units can only move during the main phase.");
+    return;
+  }
+
+  const activeFaction = getActiveFaction();
+  if (!activeFaction) {
+    return;
+  }
+
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    return;
+  }
+
+  const units = getUnitsForCell(coordinates.row, coordinates.col);
+  const friendlyUnits = units.filter(
+    (unit) => unit.factionId === activeFaction.id,
+  );
+
+  if (friendlyUnits.length === 0) {
+    setSelectionGuidance("No friendly units available to select.");
+    return;
+  }
+
+  const allSelected = friendlyUnits.every((unit) =>
+    selectedUnitIds.has(unit.instanceId),
+  );
+
+  if (allSelected) {
+    friendlyUnits.forEach((unit) => selectedUnitIds.delete(unit.instanceId));
+  } else {
+    friendlyUnits.forEach((unit) => selectedUnitIds.add(unit.instanceId));
+  }
+
+  renderProvinceUnitList(selectedCell, units);
+  refreshSelectionStatus();
 };
 
 const renderCellResourceList = (cell) => {
@@ -3450,6 +3712,8 @@ buyUnitButton?.addEventListener("click", () => {
 moveUnitsButton?.addEventListener("click", () => {
   beginUnitMovement();
 });
+
+provinceSelectAllButton?.addEventListener("click", handleSelectAllUnits);
 
 if (helpButton) {
   helpButton.addEventListener("click", () => {
