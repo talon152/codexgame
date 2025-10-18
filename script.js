@@ -2600,16 +2600,31 @@ const applyStackSelectionState = (element, button, unitsForCard = []) => {
   }
 
   if (button) {
+    const defaultLabel = totalUnits > 1 ? `Select (${totalUnits})` : "Select";
+    button.textContent = defaultLabel;
+
     if (allSelected) {
-      button.textContent =
-        totalUnits > 1 ? `Selected (${totalUnits})` : "Selected";
+      const clearLabel =
+        totalUnits > 1
+          ? `Clear selection for ${totalUnits} units`
+          : "Clear selection for this unit";
       button.setAttribute("aria-pressed", "true");
+      button.setAttribute("aria-label", clearLabel);
     } else if (partiallySelected) {
-      button.textContent = `Selected (${selectedCount}/${totalUnits})`;
+      const remaining = totalUnits - selectedCount;
+      const partialLabel =
+        remaining === 1
+          ? `Select remaining unit (1 of ${totalUnits} not selected)`
+          : `Select remaining units (${remaining} of ${totalUnits} not selected)`;
       button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-label", partialLabel);
     } else {
-      button.textContent = totalUnits > 1 ? `Select (${totalUnits})` : "Select";
+      const selectLabel =
+        totalUnits > 1
+          ? `Select all ${totalUnits} units`
+          : "Select this unit";
       button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-label", selectLabel);
     }
   }
 };
