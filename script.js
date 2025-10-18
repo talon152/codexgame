@@ -3843,7 +3843,7 @@ const createCell = (row, col) => {
       resourceBadges.appendChild(
         createResourceBadge(key, amount, {
           badgeClass: "cell-resource-badge",
-          formatText: ({ value, label }) => `${label[0]}${value}`,
+          formatText: ({ value }) => `${value}`,
         }),
       );
     }
