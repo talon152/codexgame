@@ -80,6 +80,55 @@ body.modal-open {
   scrollbar-gutter: stable;
 }
 
+.province-sidebar__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+  padding-right: 0.25rem;
+}
+
+.province-select-all {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: rgba(69, 123, 157, 0.12);
+  color: var(--primary);
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.province-select-all:hover,
+.province-select-all:focus-visible {
+  background: rgba(69, 123, 157, 0.22);
+  transform: translateY(-1px);
+}
+
+.province-select-all:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.province-select-all:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: rgba(69, 123, 157, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+.province-select-all.is-clear-mode {
+  background: rgba(230, 57, 70, 0.18);
+  color: #b3394a;
+}
+
+.province-select-all.is-clear-mode:hover,
+.province-select-all.is-clear-mode:focus-visible {
+  background: rgba(230, 57, 70, 0.26);
+}
+
 .province-unit-list {
   list-style: none;
   margin: 0;
@@ -117,9 +166,34 @@ body.modal-open {
   gap: 0.5rem;
 }
 
+.province-unit-card__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .province-unit-card__name {
   font-weight: 700;
   color: var(--primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.province-unit-card__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(69, 123, 157, 0.16);
+  color: rgba(29, 53, 87, 0.85);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .province-unit-card__controls {
@@ -160,9 +234,19 @@ body.modal-open {
     0 8px 20px rgba(29, 53, 87, 0.15);
 }
 
+.province-unit-card--partial {
+  box-shadow: 0 0 0 2px rgba(69, 123, 157, 0.25),
+    0 8px 20px rgba(29, 53, 87, 0.12);
+}
+
 .province-unit-card--selected .province-unit-card__select {
   background: var(--primary);
   color: white;
+}
+
+.province-unit-card--partial .province-unit-card__select {
+  background: rgba(69, 123, 157, 0.2);
+  color: var(--primary);
 }
 
 .province-unit-card__details {
