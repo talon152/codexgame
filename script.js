@@ -114,6 +114,9 @@ const DEFAULT_PROVINCE_SUMMARY =
   provinceUnitSummary?.textContent?.trim() ??
   "Select a province to review stationed forces.";
 
+let isCampaignOver = false;
+let campaignOutcome = null;
+
 const applyOverlaySelection = (value) => {
   const overlay = value ?? "none";
   if (!mapGrid) {
@@ -129,6 +132,15 @@ const applyOverlaySelection = (value) => {
 
 const setSelectionGuidance = (message = DEFAULT_SELECTION_MESSAGE) => {
   if (!selectionGuidance) {
+    return;
+  }
+
+  if (isCampaignOver) {
+    const finalMessage =
+      campaignOutcome?.selectionMessage ??
+      campaignOutcome?.summary ??
+      "The campaign has concluded.";
+    selectionGuidance.textContent = finalMessage;
     return;
   }
 
@@ -292,6 +304,34 @@ const beginCapitalSelection = () => {
 };
 
 const updatePhaseDisplay = () => {
+  if (isCampaignOver) {
+    const summary =
+      campaignOutcome?.summary ?? "The campaign has concluded.";
+
+    if (phaseNameDisplay) {
+      phaseNameDisplay.textContent = "Campaign Over";
+    }
+
+    if (phaseSummaryDisplay) {
+      phaseSummaryDisplay.textContent = summary;
+    }
+
+    if (sidebarPhaseBadge) {
+      const badgeLabel = "Campaign Over";
+      sidebarPhaseBadge.textContent = badgeLabel;
+      sidebarPhaseBadge.className = "phase-badge phase-badge--turn";
+      sidebarPhaseBadge.hidden = false;
+      sidebarPhaseBadge.setAttribute("aria-label", `Current phase: ${badgeLabel}`);
+    }
+
+    if (capitalGuidance) {
+      capitalGuidance.textContent = "";
+      capitalGuidance.hidden = true;
+    }
+
+    return;
+  }
+
   if (isCapitalSelectionActive()) {
     if (phaseNameDisplay) {
       phaseNameDisplay.textContent = "Capital Placement";
@@ -387,6 +427,28 @@ const updateFactionDisplay = () => {
     return;
   }
 
+  if (isCampaignOver) {
+    const winnerId = campaignOutcome?.winnerId ?? null;
+    const winner = winnerId ? getFactionById(winnerId) : null;
+    const winnerName =
+      campaignOutcome?.winnerName ?? winner?.name ?? winnerId ?? "Victorious faction";
+    const summary =
+      campaignOutcome?.summary ?? "The campaign has concluded.";
+
+    currentFactionDisplay.textContent = `${winnerName} Victory`;
+    currentFactionDisplay.className = winner
+      ? `faction-badge faction-${winner.id}`
+      : "faction-badge";
+    currentFactionDisplay.setAttribute("title", summary);
+
+    if (turnCounterDisplay) {
+      turnCounterDisplay.textContent = "Campaign concluded";
+    }
+
+    updateResourceDisplay();
+    return;
+  }
+
   const faction = factions[turnState.currentFactionIndex];
 
   if (!faction) {
@@ -411,10 +473,22 @@ const updateFactionDisplay = () => {
 };
 
 const isMainPhaseActive = () =>
-  !isCapitalSelectionActive() && turnState.currentPhaseIndex === MAIN_PHASE_INDEX;
+  !isCampaignOver &&
+  !isCapitalSelectionActive() &&
+  turnState.currentPhaseIndex === MAIN_PHASE_INDEX;
 
 const updateAdvanceButton = () => {
   if (!advancePhaseButton) {
+    return;
+  }
+
+  if (isCampaignOver) {
+    advancePhaseButton.textContent = "Campaign Concluded";
+    advancePhaseButton.setAttribute(
+      "aria-label",
+      "The campaign has concluded",
+    );
+    advancePhaseButton.disabled = true;
     return;
   }
 
@@ -835,6 +909,9 @@ const applyArmySelection = (armyIds) => {
     .map((id) => getArmyById(id))
     .filter((army) => Boolean(army));
 
+  isCampaignOver = false;
+  campaignOutcome = null;
+
   factions = selectedArmies.map((army) => army.faction);
   unitRosters.clear();
   resetFactionResources();
@@ -1032,6 +1109,10 @@ const collectTerritoryIncomeForActiveFaction = () => {
 };
 
 const runStartPhase = () => {
+  if (isCampaignOver) {
+    return;
+  }
+
   if (factions.length === 0) {
     updateTurnDisplay();
     return;
@@ -1094,6 +1175,10 @@ const advancePhase = async () => {
     return;
   }
 
+  if (isCampaignOver) {
+    return;
+  }
+
   if (isCapitalSelectionActive()) {
     return;
   }
@@ -1135,6 +1220,12 @@ const advancePhase = async () => {
     }
   }
 
+  if (isCampaignOver) {
+    updateTurnDisplay();
+    updateAdvanceButton();
+    return;
+  }
+
   turnState.currentPhaseIndex = START_PHASE_INDEX;
   turnState.currentFactionIndex =
     (turnState.currentFactionIndex + 1) % factions.length;
@@ -1144,6 +1235,67 @@ const advancePhase = async () => {
 };
 
 const formatCoordinates = (row, col) => `Row ${row + 1}, Column ${col + 1}`;
+
+const concludeCampaignFromCapitalCapture = (cell, conquerorId) => {
+  if (isCampaignOver || !cell) {
+    return;
+  }
+
+  const capitalOwnerId = cell.dataset?.capitalFaction ?? null;
+  if (!capitalOwnerId || capitalOwnerId === conquerorId) {
+    return;
+  }
+
+  const defender = getFactionById(capitalOwnerId);
+  const attacker = conquerorId ? getFactionById(conquerorId) : null;
+  const defenderName = defender?.name ?? capitalOwnerId;
+  const attackerName = attacker?.name ?? conquerorId ?? "Unknown forces";
+  const capitalLabel = cell.dataset?.capitalName
+    ? `${cell.dataset.capitalName} capital`
+    : `${defenderName}'s capital`;
+
+  const coordinates = getCellCoordinates(cell);
+  const locationLabel = coordinates
+    ? formatCoordinates(coordinates.row, coordinates.col)
+    : null;
+
+  const summaryParts = [];
+  summaryParts.push(
+    `${attackerName} capture the ${capitalLabel}${
+      locationLabel ? ` at ${locationLabel}` : ""
+    }.`,
+  );
+  summaryParts.push(`${defenderName} can no longer continue the campaign.`);
+
+  const summary = summaryParts.join(" ");
+
+  campaignOutcome = {
+    winnerId: conquerorId,
+    winnerName: attackerName,
+    loserId: capitalOwnerId,
+    loserName: defenderName,
+    capitalName: capitalLabel,
+    location: locationLabel,
+    summary,
+    selectionMessage: summary,
+  };
+
+  isCampaignOver = true;
+  resetMovementState();
+  selectedUnitIds.clear();
+
+  appendBattleLog(summary);
+
+  if (battleCloseButton) {
+    battleCloseButton.textContent = "Close";
+  }
+
+  updateTurnDisplay();
+  setSelectionGuidance(summary);
+  updateAdvanceButton();
+  updateActionButtonsAvailability();
+  updateProvinceSelectAllButtonState();
+};
 
 const buildProvinceSummary = (cell, row, col) => {
   const summaryParts = [];
@@ -1536,6 +1688,7 @@ const setProvinceOwner = (row, col, factionId, { cellElement = null } = {}) => {
       OWNER_CLASS_BY_FACTION.get(ownerId) ?? "cell--owner-generic";
     cell.classList.add(ownerClass);
     cell.dataset.ownerFaction = ownerId;
+    concludeCampaignFromCapitalCapture(cell, ownerId);
   }
 
   return ownerId;
@@ -2089,6 +2242,10 @@ const updateProvinceOwnershipAfterBattle = (
 };
 
 const runBattleForCell = async ({ row, col, units }) => {
+  if (isCampaignOver) {
+    return;
+  }
+
   const uniqueFactionIds = Array.from(
     new Set(units.map((unit) => unit.factionId)),
   );
@@ -2332,8 +2489,14 @@ const resolveEndOfTurnBattles = async () => {
   const contestedCells = getContestedCells();
 
   for (const contested of contestedCells) {
+    if (isCampaignOver) {
+      break;
+    }
     // eslint-disable-next-line no-await-in-loop
     await runBattleForCell(contested);
+    if (isCampaignOver) {
+      break;
+    }
   }
 };
 
@@ -2459,6 +2622,18 @@ const updateProvinceSelectAllButtonState = ({
     return;
   }
 
+  if (isCampaignOver) {
+    provinceSelectAllButton.disabled = true;
+    provinceSelectAllButton.textContent = "Select all";
+    provinceSelectAllButton.classList.remove("is-clear-mode");
+    provinceSelectAllButton.setAttribute(
+      "aria-label",
+      "Select all units (unavailable)",
+    );
+    provinceSelectAllButton.setAttribute("aria-pressed", "false");
+    return;
+  }
+
   const activeFaction = getActiveFaction();
   const effectiveCell = cell ?? selectedCell;
   const coordinates =
@@ -2541,6 +2716,16 @@ const updateActionButtonsAvailability = () => {
     return;
   }
 
+  if (isCampaignOver) {
+    if (buyUnitButton) {
+      buyUnitButton.disabled = true;
+    }
+    if (moveUnitsButton) {
+      moveUnitsButton.disabled = true;
+    }
+    return;
+  }
+
   if (movementState.isActive) {
     if (buyUnitButton) {
       buyUnitButton.disabled = true;
@@ -2607,6 +2792,11 @@ const refreshSelectionStatus = () => {
   updateProvinceSelectAllButtonState();
 
   if (!selectionGuidance) {
+    return;
+  }
+
+  if (isCampaignOver) {
+    setSelectionGuidance();
     return;
   }
 
@@ -2737,6 +2927,11 @@ const beginUnitMovement = () => {
   if (movementState.isActive) {
     resetMovementState();
     refreshSelectionStatus();
+    return;
+  }
+
+  if (isCampaignOver) {
+    setSelectionGuidance();
     return;
   }
 
@@ -2898,6 +3093,11 @@ const executeMovementTo = (targetCell, targetCoords) => {
     setProvinceOwner(targetCoords.row, targetCoords.col, movingFactionId, {
       cellElement: targetCell,
     });
+    if (isCampaignOver) {
+      resetMovementState();
+      refreshSelectionStatus();
+      return;
+    }
   }
 
   resetMovementState();
