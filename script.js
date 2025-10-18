@@ -171,6 +171,7 @@ const turnState = {
 const getCellKey = (row, col) => `${row}-${col}`;
 
 const boardUnits = new Map();
+const cellEngagements = new Map();
 const provinceOwners = new Map();
 
 const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
@@ -761,6 +762,7 @@ const clearProvinceOwnerForCell = (cell) => {
 
 const resetBoardState = () => {
   boardUnits.clear();
+  cellEngagements.clear();
   provinceOwners.clear();
   selectedUnitIds.clear();
   lastRenderedCellKey = null;
@@ -1405,6 +1407,149 @@ const setUnitsForCell = (row, col, units) => {
   }
 };
 
+const clearUnitBattleRole = (unit) => {
+  if (!unit || typeof unit !== "object") {
+    return;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(unit, "battleRole")) {
+    delete unit.battleRole;
+  }
+};
+
+const synchroniseCellEngagementForCell = (row, col) => {
+  const units = getUnitsForCell(row, col);
+  const key = getCellKey(row, col);
+
+  if (!Array.isArray(units) || units.length === 0) {
+    cellEngagements.delete(key);
+    return;
+  }
+
+  const factionIds = Array.from(
+    new Set(
+      units
+        .map((unit) => unit?.factionId)
+        .filter((factionId) => typeof factionId === "string" || typeof factionId === "number"),
+    ),
+  );
+
+  if (factionIds.length <= 1) {
+    cellEngagements.delete(key);
+    units.forEach((unit) => clearUnitBattleRole(unit));
+    return;
+  }
+
+  let record = cellEngagements.get(key);
+  if (!record) {
+    const [firstFaction, ...otherFactions] = factionIds;
+    record = {
+      defenders: new Set(firstFaction ? [firstFaction] : []),
+      attackers: new Set(otherFactions),
+    };
+    cellEngagements.set(key, record);
+  }
+
+  const presentFactions = new Set(factionIds);
+
+  Array.from(record.attackers).forEach((factionId) => {
+    if (!presentFactions.has(factionId)) {
+      record.attackers.delete(factionId);
+    }
+  });
+
+  Array.from(record.defenders).forEach((factionId) => {
+    if (!presentFactions.has(factionId)) {
+      record.defenders.delete(factionId);
+    }
+  });
+
+  if (record.defenders.size === 0) {
+    const fallback = factionIds.find((factionId) => !record.attackers.has(factionId));
+    if (fallback) {
+      record.defenders.add(fallback);
+    }
+  }
+
+  Array.from(record.attackers).forEach((factionId) => {
+    if (record.defenders.has(factionId)) {
+      record.attackers.delete(factionId);
+    }
+  });
+
+  units.forEach((unit) => {
+    if (!unit || typeof unit !== "object") {
+      return;
+    }
+
+    if (record.defenders.has(unit.factionId)) {
+      unit.battleRole = "defender";
+    } else if (record.attackers.has(unit.factionId)) {
+      unit.battleRole = "attacker";
+    } else {
+      clearUnitBattleRole(unit);
+    }
+  });
+};
+
+const recordCellEngagementAttack = (
+  row,
+  col,
+  { movingFactionId = null, previousUnits = [] } = {},
+) => {
+  if (!movingFactionId) {
+    return;
+  }
+
+  const key = getCellKey(row, col);
+  let record = cellEngagements.get(key);
+  if (!record) {
+    record = {
+      attackers: new Set(),
+      defenders: new Set(),
+    };
+    cellEngagements.set(key, record);
+  }
+
+  const otherFactions = Array.from(
+    new Set(
+      previousUnits
+        .filter((unit) => unit && unit.factionId !== movingFactionId)
+        .map((unit) => unit.factionId),
+    ),
+  ).filter((factionId) => typeof factionId === "string" || typeof factionId === "number");
+
+  const hasExistingRoles =
+    record.attackers.size > 0 || record.defenders.size > 0;
+
+  if (!hasExistingRoles && otherFactions.length > 0) {
+    otherFactions.forEach((factionId) => record.defenders.add(factionId));
+  }
+
+  if (record.defenders.has(movingFactionId)) {
+    otherFactions.forEach((factionId) => {
+      if (record.defenders.has(factionId)) {
+        return;
+      }
+      record.attackers.add(factionId);
+    });
+    record.attackers.delete(movingFactionId);
+  } else {
+    otherFactions.forEach((factionId) => {
+      if (!record.attackers.has(factionId) && !record.defenders.has(factionId)) {
+        record.defenders.add(factionId);
+      }
+    });
+    record.defenders.delete(movingFactionId);
+    record.attackers.add(movingFactionId);
+  }
+
+  synchroniseCellEngagementForCell(row, col);
+};
+
+const getCellEngagement = (row, col) =>
+  cellEngagements.get(getCellKey(row, col)) ?? null;
+
 const wait = (ms) =>
   new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -1880,6 +2025,7 @@ const applyBattleTraitEffects = ({
   units,
   getFactionName,
   cellElement,
+  battleContext = null,
 }) => {
   const allUnitsById = new Map(units.map((unit) => [unit.instanceId, unit]));
   const originalStats = new Map();
@@ -1887,6 +2033,10 @@ const applyBattleTraitEffects = ({
   const traitState = {
     phantomCourierBuffed: new Set(),
     spotlightTheftFactions: new Set(),
+    battleContext: {
+      attackers: new Set(battleContext?.attackers ?? []),
+      defenders: new Set(battleContext?.defenders ?? []),
+    },
   };
 
   const adjustUnitStat = (unit, stat, delta) => {
@@ -2102,7 +2252,14 @@ const applyBattleTraitEffects = ({
     });
   };
 
-  return { revert, summaries, onAttack, onUnitDefeated, onBattleComplete };
+  return {
+    revert,
+    summaries,
+    onAttack,
+    onUnitDefeated,
+    onBattleComplete,
+    battleContext: traitState.battleContext,
+  };
 };
 
 const openBattleModal = ({
@@ -2111,6 +2268,8 @@ const openBattleModal = ({
   topFactionName,
   bottomFactionName,
   terrainLabel,
+  topRole = null,
+  bottomRole = null,
 }) => {
   if (!battleModal) {
     return;
@@ -2137,11 +2296,15 @@ const openBattleModal = ({
   }
 
   if (battleTopLabel) {
-    battleTopLabel.textContent = topFactionName;
+    battleTopLabel.textContent = topRole
+      ? `${topRole}: ${topFactionName}`
+      : topFactionName;
   }
 
   if (battleBottomLabel) {
-    battleBottomLabel.textContent = bottomFactionName;
+    battleBottomLabel.textContent = bottomRole
+      ? `${bottomRole}: ${bottomFactionName}`
+      : bottomFactionName;
   }
 
   if (battleLocationDisplay) {
@@ -2244,6 +2407,7 @@ const getContestedCells = () => {
     }
 
     const [row, col] = key.split("-").map(Number);
+    synchroniseCellEngagementForCell(row, col);
     contested.push({ row, col, units });
   });
 
@@ -2290,6 +2454,8 @@ const runBattleForCell = async ({ row, col, units }) => {
     return;
   }
 
+  synchroniseCellEngagementForCell(row, col);
+
   const uniqueFactionIds = Array.from(
     new Set(units.map((unit) => unit.factionId)),
   );
@@ -2298,25 +2464,55 @@ const runBattleForCell = async ({ row, col, units }) => {
     return;
   }
 
-  const [topFactionId, ...otherFactionIds] = uniqueFactionIds;
-  const bottomFactionIds = otherFactionIds.length
-    ? otherFactionIds
-    : uniqueFactionIds.slice(1);
+  const engagement = getCellEngagement(row, col);
+  const presentFactionIds = Array.from(new Set(uniqueFactionIds));
+  let defenderFactionIds = engagement
+    ? Array.from(engagement.defenders).filter((id) =>
+        presentFactionIds.includes(id),
+      )
+    : [];
+  let attackerFactionIds = engagement
+    ? Array.from(engagement.attackers).filter((id) =>
+        presentFactionIds.includes(id),
+      )
+    : [];
 
-  const topFaction = getFactionById(topFactionId);
-  const bottomFactionNames = bottomFactionIds.map(
+  if (defenderFactionIds.length === 0 && presentFactionIds.length > 0) {
+    const [firstFaction, ...otherFactions] = presentFactionIds;
+    if (firstFaction) {
+      defenderFactionIds = [firstFaction];
+    }
+    attackerFactionIds = otherFactions.filter((id) => id !== firstFaction);
+  }
+
+  presentFactionIds.forEach((factionId) => {
+    if (
+      !defenderFactionIds.includes(factionId) &&
+      !attackerFactionIds.includes(factionId)
+    ) {
+      attackerFactionIds.push(factionId);
+    }
+  });
+
+  const defenderSet = new Set(defenderFactionIds);
+  const attackerSet = new Set(attackerFactionIds);
+
+  const defenderNames = defenderFactionIds.map(
+    (id) => getFactionById(id)?.name ?? id,
+  );
+  const attackerNames = attackerFactionIds.map(
     (id) => getFactionById(id)?.name ?? id,
   );
 
-  const topFactionName = topFaction?.name ?? topFactionId;
-  const bottomFactionName = bottomFactionNames.length
-    ? bottomFactionNames.join(" / ")
-    : "Opposing Forces";
+  const topFactionName = defenderNames.length
+    ? defenderNames.join(" / ")
+    : "Defending Forces";
+  const bottomFactionName = attackerNames.length
+    ? attackerNames.join(" / ")
+    : "Attacking Forces";
 
-  const topUnits = units.filter((unit) => unit.factionId === topFactionId);
-  const bottomUnits = units.filter((unit) =>
-    bottomFactionIds.includes(unit.factionId),
-  );
+  const topUnits = units.filter((unit) => defenderSet.has(unit.factionId));
+  const bottomUnits = units.filter((unit) => attackerSet.has(unit.factionId));
 
   const terrainInfo = getCellTerrainInfo(row, col);
   const terrainLabel = terrainInfo?.label ?? null;
@@ -2327,15 +2523,22 @@ const runBattleForCell = async ({ row, col, units }) => {
     col,
     topFactionName,
     bottomFactionName,
+    topRole: defenderNames.length ? "Defenders" : null,
+    bottomRole: attackerNames.length ? "Attackers" : null,
     terrainLabel,
   });
 
   const { revert: revertTerrainModifiers, summaries: terrainSummaries } =
     applyTerrainModifiersToUnits(units, terrainInfo);
+  const battleContext = {
+    defenders: new Set(defenderFactionIds),
+    attackers: new Set(attackerFactionIds),
+  };
   const traitRuntime = applyBattleTraitEffects({
     units,
     getFactionName: (id) => getFactionById(id)?.name ?? id,
     cellElement,
+    battleContext,
   });
 
   const unitElements = new Map();
@@ -2356,7 +2559,13 @@ const runBattleForCell = async ({ row, col, units }) => {
     }
   });
 
-  appendBattleLog(`${topFactionName} engage ${bottomFactionName}.`);
+  if (defenderNames.length && attackerNames.length) {
+    appendBattleLog(
+      `${attackerNames.join(" / ")} assault ${defenderNames.join(" / ")}.`,
+    );
+  } else {
+    appendBattleLog(`${topFactionName} engage ${bottomFactionName}.`);
+  }
   if (terrainLabel) {
     appendBattleLog(`The clash erupts on the ${terrainLabel}.`);
   }
@@ -2506,6 +2715,7 @@ const runBattleForCell = async ({ row, col, units }) => {
   revertTerrainModifiers();
 
   setUnitsForCell(row, col, survivors);
+  synchroniseCellEngagementForCell(row, col);
   if (cellElement) {
     updateCellUnitStack(cellElement, survivors);
   }
@@ -3159,6 +3369,17 @@ const executeMovementTo = (targetCell, targetCoords) => {
     }
   }
 
+  if (hadEnemyUnits) {
+    recordCellEngagementAttack(targetCoords.row, targetCoords.col, {
+      movingFactionId,
+      previousUnits: existingDestinationUnits,
+    });
+  } else {
+    synchroniseCellEngagementForCell(targetCoords.row, targetCoords.col);
+  }
+
+  synchroniseCellEngagementForCell(originRow, originCol);
+
   resetMovementState();
   selectedUnitIds.clear();
   movedUnitIds.forEach((id) => selectedUnitIds.add(id));
@@ -3270,6 +3491,7 @@ const populateIndependentCells = () => {
     );
 
     setUnitsForCell(row, col, units);
+    synchroniseCellEngagementForCell(row, col);
     updateCellUnitStack(cell, units);
   });
 };
@@ -3776,6 +3998,7 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
   const unitInstance = createUnitInstance(factionId, template);
   existingUnits.push(unitInstance);
   setUnitsForCell(row, col, existingUnits);
+  synchroniseCellEngagementForCell(row, col);
   selectedUnitIds.add(unitInstance.instanceId);
   renderSelectedCellDetails(selectedCell);
 
