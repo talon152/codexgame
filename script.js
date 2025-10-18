@@ -25,6 +25,7 @@ import {
   advancePhaseButton,
   cellResourceList,
   buyUnitButton,
+  buildStructureButton,
   moveUnitsButton,
   selectionGuidance,
   resourceInspirationDisplay,
@@ -173,6 +174,40 @@ const getCellKey = (row, col) => `${row}-${col}`;
 const boardUnits = new Map();
 const cellEngagements = new Map();
 const provinceOwners = new Map();
+const boardStructures = new Map();
+
+const STRUCTURE_TYPES = {
+  FORT: {
+    id: "fort",
+    name: "Fort",
+    shortLabel: "Fort",
+    cost: { inspiration: 3, will: 2 },
+    defenceBonus: 2,
+    allowsRecruitment: true,
+  },
+};
+
+const formatStructureCost = (structure) => {
+  if (!structure) {
+    return "";
+  }
+
+  const entries = Object.entries(structure.cost ?? {}).filter(([, value]) =>
+    Number.isFinite(value) && value > 0,
+  );
+
+  if (entries.length === 0) {
+    return "No cost";
+  }
+
+  return entries
+    .map(([resourceKey, amount]) => {
+      const resource = getResourceDefinition(resourceKey);
+      const label = resource?.label ?? resource?.name ?? resourceKey;
+      return `${amount} ${label}`;
+    })
+    .join(" • ");
+};
 
 const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
 const OWNER_CLASS_BY_FACTION = new Map([
@@ -192,6 +227,156 @@ const capitalSelectionState = {
   isActive: false,
   index: 0,
   error: "",
+};
+
+const getStructureRecord = (row, col) =>
+  boardStructures.get(getCellKey(row, col)) ?? null;
+
+const setStructureForCell = (row, col, structure) => {
+  const key = getCellKey(row, col);
+  if (structure) {
+    boardStructures.set(key, { ...structure });
+  } else {
+    boardStructures.delete(key);
+  }
+};
+
+const clearCellStructureElement = (cell) => {
+  if (!cell) {
+    return;
+  }
+
+  delete cell.dataset.structureType;
+  delete cell.dataset.structureOwner;
+  cell.classList.remove("cell--has-structure", "cell--structure-fort");
+
+  const badge = cell.querySelector(".cell-structure-badge");
+  if (badge) {
+    badge.remove();
+  }
+};
+
+const applyStructureToCellElement = (cell, structure) => {
+  if (!cell) {
+    return;
+  }
+
+  if (!structure) {
+    clearCellStructureElement(cell);
+    return;
+  }
+
+  cell.dataset.structureType = structure.id;
+  if (structure.ownerFactionId) {
+    cell.dataset.structureOwner = structure.ownerFactionId;
+  } else {
+    delete cell.dataset.structureOwner;
+  }
+
+  cell.classList.add("cell--has-structure");
+  if (structure.id === STRUCTURE_TYPES.FORT.id) {
+    cell.classList.add("cell--structure-fort");
+  } else {
+    cell.classList.remove("cell--structure-fort");
+  }
+
+  let badge = cell.querySelector(".cell-structure-badge");
+  if (!badge) {
+    badge = document.createElement("span");
+    badge.className = "cell-structure-badge";
+    badge.setAttribute("aria-hidden", "true");
+    cell.appendChild(badge);
+  }
+
+  badge.dataset.structure = structure.id;
+  badge.textContent = structure.shortLabel ?? structure.name ?? structure.id;
+};
+
+const updateCellStructureVisual = (row, col, { cellElement = null } = {}) => {
+  const cell = cellElement ?? getCellElementAt(row, col);
+  if (!cell) {
+    return;
+  }
+
+  const structure = getStructureRecord(row, col);
+  if (structure) {
+    applyStructureToCellElement(cell, structure);
+  } else {
+    clearCellStructureElement(cell);
+  }
+};
+
+const cellIsControlledByFaction = (cell, factionId) => {
+  if (!cell || !factionId) {
+    return false;
+  }
+
+  if (cell.dataset.ownerFaction) {
+    return cell.dataset.ownerFaction === factionId;
+  }
+
+  if (cell.dataset.capitalFaction) {
+    return cell.dataset.capitalFaction === factionId;
+  }
+
+  return false;
+};
+
+const cellAllowsRecruitmentForFaction = (cell, factionId) => {
+  if (!cell || !factionId) {
+    return false;
+  }
+
+  if (cell.dataset.capitalFaction === factionId) {
+    return true;
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    return false;
+  }
+
+  const structure = getStructureRecord(coordinates.row, coordinates.col);
+  if (!structure) {
+    return false;
+  }
+
+  if (!structure.allowsRecruitment) {
+    return false;
+  }
+
+  if (!structure.ownerFactionId) {
+    return cellIsControlledByFaction(cell, factionId);
+  }
+
+  return structure.ownerFactionId === factionId;
+};
+
+const canFortifyCellForFaction = (cell, factionId) => {
+  if (!cell || !factionId) {
+    return false;
+  }
+
+  if (!cellIsControlledByFaction(cell, factionId)) {
+    return false;
+  }
+
+  const coordinates = getCellCoordinates(cell);
+  if (!coordinates) {
+    return false;
+  }
+
+  if (getStructureRecord(coordinates.row, coordinates.col)) {
+    return false;
+  }
+
+  const units = getUnitsForCell(coordinates.row, coordinates.col);
+  const hasEnemyUnits = units.some((unit) => unit.factionId !== factionId);
+  if (hasEnemyUnits) {
+    return false;
+  }
+
+  return true;
 };
 
 const TEMPLATE_IDS = {
@@ -764,6 +949,7 @@ const resetBoardState = () => {
   boardUnits.clear();
   cellEngagements.clear();
   provinceOwners.clear();
+  boardStructures.clear();
   selectedUnitIds.clear();
   lastRenderedCellKey = null;
   resetMovementState();
@@ -785,6 +971,7 @@ const resetBoardState = () => {
     clearProvinceOwnerForCell(cell);
     delete cell.dataset.capitalFaction;
     delete cell.dataset.capitalName;
+    clearCellStructureElement(cell);
     const badge = cell.querySelector(".cell-capital-badge");
     if (badge) {
       badge.remove();
@@ -1880,6 +2067,15 @@ const setProvinceOwner = (row, col, factionId, { cellElement = null } = {}) => {
     concludeCampaignFromCapitalCapture(cell, ownerId);
   }
 
+  const structure = getStructureRecord(row, col);
+  if (structure) {
+    const nextStructure = { ...structure, ownerFactionId: ownerId };
+    setStructureForCell(row, col, nextStructure);
+    applyStructureToCellElement(cell, nextStructure);
+  } else {
+    clearCellStructureElement(cell);
+  }
+
   return ownerId;
 };
 
@@ -2018,6 +2214,76 @@ const applyTerrainModifiersToUnits = (units, terrainInfo) => {
       });
     },
     summaries,
+  };
+};
+
+const applyStructureBattleEffects = ({
+  row,
+  col,
+  units = [],
+  defenders = [],
+  getFactionName = (id) => id,
+}) => {
+  const structure = getStructureRecord(row, col);
+  if (!structure) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  const defenceBonus = Number(structure.defenceBonus ?? 0);
+  if (!Number.isFinite(defenceBonus) || defenceBonus === 0) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  const unitsById = new Map(
+    units
+      .filter((unit) => unit && unit.instanceId)
+      .map((unit) => [unit.instanceId, unit]),
+  );
+
+  const defenderSet = new Set(defenders);
+  if (defenderSet.size === 0) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  if (structure.ownerFactionId && !defenderSet.has(structure.ownerFactionId)) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  const affectedUnits = units.filter(
+    (unit) =>
+      defenderSet.has(unit.factionId) &&
+      (!structure.ownerFactionId || unit.factionId === structure.ownerFactionId),
+  );
+
+  const originalValues = new Map();
+  affectedUnits.forEach((unit) => {
+    const current = Number(unit.stats?.defence);
+    if (!Number.isFinite(current)) {
+      return;
+    }
+    originalValues.set(unit.instanceId, current);
+    unit.stats.defence = current + defenceBonus;
+  });
+
+  if (originalValues.size === 0) {
+    return { revert: () => {}, summaries: [] };
+  }
+
+  const ownerName = structure.ownerFactionId
+    ? getFactionName(structure.ownerFactionId)
+    : "the defenders";
+  const summary = `${structure.name} bolsters ${ownerName} with +${defenceBonus} DEF.`;
+
+  return {
+    summaries: [summary],
+    revert: () => {
+      originalValues.forEach((value, unitId) => {
+        const unit = unitsById.get(unitId);
+        if (unit && unit.stats) {
+          unit.stats.defence = value;
+        }
+      });
+    },
   };
 };
 
@@ -2530,6 +2796,16 @@ const runBattleForCell = async ({ row, col, units }) => {
 
   const { revert: revertTerrainModifiers, summaries: terrainSummaries } =
     applyTerrainModifiersToUnits(units, terrainInfo);
+  const {
+    revert: revertStructureModifiers = () => {},
+    summaries: structureSummaries = [],
+  } = applyStructureBattleEffects({
+    row,
+    col,
+    units,
+    defenders: defenderFactionIds,
+    getFactionName: (id) => getFactionById(id)?.name ?? id,
+  });
   const battleContext = {
     defenders: new Set(defenderFactionIds),
     attackers: new Set(attackerFactionIds),
@@ -2570,6 +2846,9 @@ const runBattleForCell = async ({ row, col, units }) => {
     appendBattleLog(`The clash erupts on the ${terrainLabel}.`);
   }
   terrainSummaries.forEach((summary) => {
+    appendBattleLog(summary);
+  });
+  structureSummaries.forEach((summary) => {
     appendBattleLog(summary);
   });
   traitRuntime?.summaries?.forEach((summary) => {
@@ -2712,6 +2991,7 @@ const runBattleForCell = async ({ row, col, units }) => {
   });
 
   traitRuntime?.revert?.();
+  revertStructureModifiers();
   revertTerrainModifiers();
 
   setUnitsForCell(row, col, survivors);
@@ -2981,13 +3261,16 @@ const updateProvinceSelectAllButtonState = ({
 };
 
 const updateActionButtonsAvailability = () => {
-  if (!buyUnitButton && !moveUnitsButton) {
+  if (!buyUnitButton && !moveUnitsButton && !buildStructureButton) {
     return;
   }
 
   if (isCampaignOver) {
     if (buyUnitButton) {
       buyUnitButton.disabled = true;
+    }
+    if (buildStructureButton) {
+      buildStructureButton.disabled = true;
     }
     if (moveUnitsButton) {
       moveUnitsButton.disabled = true;
@@ -2998,6 +3281,10 @@ const updateActionButtonsAvailability = () => {
   if (movementState.isActive) {
     if (buyUnitButton) {
       buyUnitButton.disabled = true;
+    }
+
+    if (buildStructureButton) {
+      buildStructureButton.disabled = true;
     }
 
     if (moveUnitsButton) {
@@ -3017,6 +3304,9 @@ const updateActionButtonsAvailability = () => {
     if (buyUnitButton) {
       buyUnitButton.disabled = true;
     }
+    if (buildStructureButton) {
+      buildStructureButton.disabled = true;
+    }
     if (moveUnitsButton) {
       moveUnitsButton.disabled = true;
     }
@@ -3031,6 +3321,9 @@ const updateActionButtonsAvailability = () => {
     if (buyUnitButton) {
       buyUnitButton.disabled = true;
     }
+    if (buildStructureButton) {
+      buildStructureButton.disabled = true;
+    }
     if (moveUnitsButton) {
       moveUnitsButton.disabled = true;
     }
@@ -3042,12 +3335,37 @@ const updateActionButtonsAvailability = () => {
     ? units.filter((unit) => unit.factionId === activeFaction.id)
     : [];
 
-  const isCapital =
+  const canRecruit =
     hasActiveFaction &&
-    selectedCell.dataset.capitalFaction === activeFaction.id;
-  const canRecruit = hasActiveFaction && isMainPhaseActive() && isCapital;
+    isMainPhaseActive() &&
+    cellAllowsRecruitmentForFaction(selectedCell, activeFaction.id);
   if (buyUnitButton) {
     buyUnitButton.disabled = !canRecruit;
+  }
+
+  if (buildStructureButton) {
+    const fortDefinition = STRUCTURE_TYPES.FORT;
+    if (!fortDefinition) {
+      buildStructureButton.disabled = true;
+      buildStructureButton.removeAttribute("title");
+    } else {
+      const costSummary = formatStructureCost(fortDefinition);
+      if (costSummary) {
+        buildStructureButton.title = `Cost: ${costSummary}`;
+      } else {
+        buildStructureButton.removeAttribute("title");
+      }
+
+      let canBuild =
+        hasActiveFaction && isMainPhaseActive() &&
+        canFortifyCellForFaction(selectedCell, activeFaction.id);
+
+      if (canBuild) {
+        canBuild = canFactionAfford(activeFaction.id, fortDefinition.cost);
+      }
+
+      buildStructureButton.disabled = !canBuild;
+    }
   }
 
   if (moveUnitsButton) {
@@ -3090,14 +3408,29 @@ const refreshSelectionStatus = () => {
   const selectedUnits = getSelectedUnitsForCell(coordinates.row, coordinates.col);
   if (selectedUnits.length === 0) {
     const activeFaction = getActiveFaction();
-    const isCapital =
-      activeFaction &&
-      selectedCell.dataset.capitalFaction === activeFaction.id;
-    if (isCapital) {
-      setSelectionGuidance("Recruit new units here or select troops to move.");
-    } else {
-      setSelectionGuidance("Select friendly units to form a movement group.");
+    if (activeFaction) {
+      const recruitmentSite = cellAllowsRecruitmentForFaction(
+        selectedCell,
+        activeFaction.id,
+      );
+      if (recruitmentSite) {
+        if (isMainPhaseActive()) {
+          setSelectionGuidance(
+            "Recruit new units here or select troops to move.",
+          );
+        } else {
+          setSelectionGuidance("Recruitment opens during the main phase.");
+        }
+        return;
+      }
+
+      if (isMainPhaseActive() && canFortifyCellForFaction(selectedCell, activeFaction.id)) {
+        setSelectionGuidance("Fortify this province or select troops to move.");
+        return;
+      }
     }
+
+    setSelectionGuidance("Select friendly units to form a movement group.");
     return;
   }
 
@@ -3907,6 +4240,17 @@ const renderSelectedCellDetails = (cell) => {
   } else if (!capitalOwnerId) {
     selectedText += " — Unclaimed province";
   }
+  updateCellStructureVisual(row, col, { cellElement: cell });
+  const structure = getStructureRecord(row, col);
+  if (structure) {
+    const ownerName = structure.ownerFactionId
+      ? getFactionById(structure.ownerFactionId)?.name ?? structure.ownerFactionId
+      : null;
+    const structureLabel = ownerName
+      ? `${structure.name} (${ownerName})`
+      : structure.name;
+    selectedText += ` — Fortifications: ${structureLabel}`;
+  }
   selectedCellDisplay.textContent = selectedText;
 
   const units = getUnitsForCell(row, col);
@@ -3958,7 +4302,9 @@ const markCapitalCell = (cell, faction) => {
 
 const handleAddUnitToSelectedCell = (factionId, template) => {
   if (!selectedCell) {
-    setSelectionGuidance("Select your capital before recruiting units.");
+    setSelectionGuidance(
+      "Select your capital or a friendly fort before recruiting units.",
+    );
     return false;
   }
 
@@ -3978,10 +4324,14 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
     return false;
   }
 
-  const isCapital =
-    selectedCell.dataset.capitalFaction === activeFaction.id;
-  if (!isCapital) {
-    setSelectionGuidance("Recruitment can only occur at your capital.");
+  const canRecruitHere = cellAllowsRecruitmentForFaction(
+    selectedCell,
+    activeFaction.id,
+  );
+  if (!canRecruitHere) {
+    setSelectionGuidance(
+      "Recruitment can only occur at your capital or a friendly fort.",
+    );
     return false;
   }
 
@@ -4003,6 +4353,76 @@ const handleAddUnitToSelectedCell = (factionId, template) => {
   renderSelectedCellDetails(selectedCell);
 
   setSelectionGuidance(`${template.name} recruited successfully.`);
+  return true;
+};
+
+const handleBuildFortOnSelectedCell = () => {
+  const fortDefinition = STRUCTURE_TYPES.FORT;
+  if (!fortDefinition) {
+    return false;
+  }
+
+  if (!selectedCell) {
+    setSelectionGuidance("Select a province you control to build a fort.");
+    return false;
+  }
+
+  const activeFaction = getActiveFaction();
+  if (!activeFaction) {
+    setSelectionGuidance("No faction is currently active.");
+    return false;
+  }
+
+  if (!isMainPhaseActive()) {
+    setSelectionGuidance(
+      "Fortifications can only be raised during the main phase.",
+    );
+    return false;
+  }
+
+  if (!cellIsControlledByFaction(selectedCell, activeFaction.id)) {
+    setSelectionGuidance("You can only build forts in provinces you control.");
+    return false;
+  }
+
+  const coordinates = getCellCoordinates(selectedCell);
+  if (!coordinates) {
+    return false;
+  }
+
+  const existingStructure = getStructureRecord(coordinates.row, coordinates.col);
+  if (existingStructure) {
+    setSelectionGuidance("This province is already fortified.");
+    return false;
+  }
+
+  const units = getUnitsForCell(coordinates.row, coordinates.col);
+  const hasEnemyUnits = units.some((unit) => unit.factionId !== activeFaction.id);
+  if (hasEnemyUnits) {
+    setSelectionGuidance("Clear enemy forces before fortifying this province.");
+    return false;
+  }
+
+  if (!spendFactionResources(activeFaction.id, fortDefinition.cost)) {
+    setSelectionGuidance("Not enough resources to build a fort.");
+    return false;
+  }
+
+  updateResourceDisplay();
+
+  const structureRecord = {
+    id: fortDefinition.id,
+    name: fortDefinition.name,
+    shortLabel: fortDefinition.shortLabel,
+    defenceBonus: fortDefinition.defenceBonus ?? 0,
+    allowsRecruitment: Boolean(fortDefinition.allowsRecruitment),
+    ownerFactionId: activeFaction.id,
+  };
+
+  setStructureForCell(coordinates.row, coordinates.col, structureRecord);
+  applyStructureToCellElement(selectedCell, structureRecord);
+  renderSelectedCellDetails(selectedCell);
+  setSelectionGuidance("Fort constructed. This province can now recruit units.");
   return true;
 };
 
@@ -4189,6 +4609,13 @@ buyUnitButton?.addEventListener("click", () => {
     return;
   }
   openUnitModal();
+});
+
+buildStructureButton?.addEventListener("click", () => {
+  if (buildStructureButton.disabled) {
+    return;
+  }
+  handleBuildFortOnSelectedCell();
 });
 
 moveUnitsButton?.addEventListener("click", () => {

@@ -9,6 +9,9 @@ export const advancePhaseButton = document.getElementById("advance-phase");
 export const cellUnitList = document.getElementById("cell-unit-list");
 export const cellResourceList = document.getElementById("cell-resource-list");
 export const buyUnitButton = document.getElementById("buy-unit-button");
+export const buildStructureButton = document.getElementById(
+  "build-structure-button",
+);
 export const moveUnitsButton = document.getElementById("move-units-button");
 export const selectionGuidance = document.getElementById("selection-guidance");
 export const resourceInspirationDisplay = document.getElementById(
