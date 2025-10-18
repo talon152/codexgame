@@ -84,6 +84,12 @@ import {
   spendFactionResources,
 } from "./src/resources.js";
 import { randomIntInclusive } from "./src/utils/random.js";
+import {
+  createStructureInstance,
+  formatStructureCost,
+  STRUCTURE_TYPES,
+  getStructureDefinitions,
+} from "./src/structures/index.js";
 
 const getRandomTerrain = () =>
   TERRAIN_TYPES[Math.floor(Math.random() * TERRAIN_TYPES.length)];
@@ -175,39 +181,11 @@ const boardUnits = new Map();
 const cellEngagements = new Map();
 const provinceOwners = new Map();
 const boardStructures = new Map();
-
-const STRUCTURE_TYPES = {
-  FORT: {
-    id: "fort",
-    name: "Fort",
-    shortLabel: "Fort",
-    cost: { inspiration: 3, will: 2 },
-    defenceBonus: 2,
-    allowsRecruitment: true,
-  },
-};
-
-const formatStructureCost = (structure) => {
-  if (!structure) {
-    return "";
-  }
-
-  const entries = Object.entries(structure.cost ?? {}).filter(([, value]) =>
-    Number.isFinite(value) && value > 0,
-  );
-
-  if (entries.length === 0) {
-    return "No cost";
-  }
-
-  return entries
-    .map(([resourceKey, amount]) => {
-      const resource = getResourceDefinition(resourceKey);
-      const label = resource?.label ?? resource?.name ?? resourceKey;
-      return `${amount} ${label}`;
-    })
-    .join(" • ");
-};
+const STRUCTURE_CELL_CLASSES = new Set(
+  getStructureDefinitions()
+    .map((definition) => definition.cellClass)
+    .filter(Boolean),
+);
 
 const INDEPENDENT_FACTION_ID = INDEPENDENT_FACTION.id;
 const OWNER_CLASS_BY_FACTION = new Map([
@@ -248,7 +226,12 @@ const clearCellStructureElement = (cell) => {
 
   delete cell.dataset.structureType;
   delete cell.dataset.structureOwner;
-  cell.classList.remove("cell--has-structure", "cell--structure-fort");
+  cell.classList.remove("cell--has-structure");
+  STRUCTURE_CELL_CLASSES.forEach((className) => {
+    if (className) {
+      cell.classList.remove(className);
+    }
+  });
 
   const badge = cell.querySelector(".cell-structure-badge");
   if (badge) {
@@ -274,10 +257,14 @@ const applyStructureToCellElement = (cell, structure) => {
   }
 
   cell.classList.add("cell--has-structure");
-  if (structure.id === STRUCTURE_TYPES.FORT.id) {
-    cell.classList.add("cell--structure-fort");
-  } else {
-    cell.classList.remove("cell--structure-fort");
+  STRUCTURE_CELL_CLASSES.forEach((className) => {
+    if (className) {
+      cell.classList.remove(className);
+    }
+  });
+
+  if (structure.cellClass) {
+    cell.classList.add(structure.cellClass);
   }
 
   let badge = cell.querySelector(".cell-structure-badge");
@@ -4410,14 +4397,9 @@ const handleBuildFortOnSelectedCell = () => {
 
   updateResourceDisplay();
 
-  const structureRecord = {
-    id: fortDefinition.id,
-    name: fortDefinition.name,
-    shortLabel: fortDefinition.shortLabel,
-    defenceBonus: fortDefinition.defenceBonus ?? 0,
-    allowsRecruitment: Boolean(fortDefinition.allowsRecruitment),
+  const structureRecord = createStructureInstance(fortDefinition, {
     ownerFactionId: activeFaction.id,
-  };
+  });
 
   setStructureForCell(coordinates.row, coordinates.col, structureRecord);
   applyStructureToCellElement(selectedCell, structureRecord);
