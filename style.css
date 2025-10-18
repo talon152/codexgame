@@ -687,6 +687,35 @@ body.modal-open {
   display: none;
 }
 
+.cell-structure-badge {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(29, 53, 87, 0.85);
+  color: #f1f3f5;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.45);
+}
+
+.cell--has-structure {
+  border-color: rgba(230, 126, 34, 0.45);
+  outline: 1px solid rgba(230, 126, 34, 0.35);
+  outline-offset: -2px;
+}
+
+.cell--structure-fort .cell-structure-badge {
+  background: rgba(230, 126, 34, 0.92);
+  color: #fff4e6;
+}
+
 .cell-resources {
   position: absolute;
   bottom: 4px;
