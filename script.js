@@ -1108,6 +1108,49 @@ const collectTerritoryIncomeForActiveFaction = () => {
   return { inspiration: totalInspiration, will: totalWill };
 };
 
+const focusActiveFactionCapital = () => {
+  const faction = getActiveFaction();
+  if (!faction) {
+    return;
+  }
+
+  const capitalCoordinates = capitalAssignments.get(faction.id);
+  if (!capitalCoordinates) {
+    return;
+  }
+
+  const capitalCell = getCellElementAt(
+    capitalCoordinates.row,
+    capitalCoordinates.col,
+  );
+
+  if (!capitalCell) {
+    return;
+  }
+
+  if (movementState.isActive) {
+    resetMovementState();
+  }
+
+  if (selectedCell === capitalCell) {
+    capitalCell.focus({ preventScroll: true });
+    renderSelectedCellDetails(capitalCell);
+    return;
+  }
+
+  if (selectedCell) {
+    selectedCell.classList.remove("selected");
+    selectedCell.setAttribute("aria-selected", "false");
+  }
+
+  selectedCell = capitalCell;
+  selectedCell.classList.add("selected");
+  selectedCell.setAttribute("aria-selected", "true");
+  selectedCell.focus({ preventScroll: true });
+
+  renderSelectedCellDetails(capitalCell);
+};
+
 const runStartPhase = () => {
   if (isCampaignOver) {
     return;
@@ -1167,6 +1210,7 @@ const runStartPhase = () => {
 
   turnState.currentPhaseIndex = MAIN_PHASE_INDEX;
   updateTurnDisplay();
+  focusActiveFactionCapital();
   refreshSelectionStatus();
 };
 
